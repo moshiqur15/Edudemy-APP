@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
+import TeacherForm from '../components/forms/TeacherForm';
+import { teachersAPI } from '../services/api';
 import { 
   Plus, 
   Search, 
@@ -13,7 +15,8 @@ import {
   X,
   Save,
   Calendar,
-  Award
+  Award,
+  AlertCircle
 } from 'lucide-react';
 
 export default function Teachers() {
@@ -23,195 +26,124 @@ export default function Teachers() {
   const [filterSubject, setFilterSubject] = useState('all');
   const [showModal, setShowModal] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    subject: '',
-    qualification: '',
-    experience: '',
-    dateOfJoining: '',
-    salary: '',
-    address: '',
-    emergencyContact: '',
-    status: 'Active'
-  });
+  const [error, setError] = useState(null);
 
-  // Mock data - replace with real API calls
-  const mockTeachers = [
-    {
-      id: 1,
-      firstName: 'Sarah',
-      lastName: 'Wilson',
-      email: 'sarah.wilson@edudemy.com',
-      phone: '+1234567890',
-      subject: 'Computer Science',
-      qualification: 'PhD in Computer Science',
-      experience: 8,
-      dateOfJoining: '2020-01-15',
-      salary: 75000,
-      address: '123 Oak Street, City, State',
-      emergencyContact: '+1234567891',
-      status: 'Active',
-      totalStudents: 72,
-      activeBatches: 3
-    },
-    {
-      id: 2,
-      firstName: 'John',
-      lastName: 'Smith',
-      email: 'john.smith@edudemy.com',
-      phone: '+1234567892',
-      subject: 'Mathematics',
-      qualification: 'Master in Mathematics',
-      experience: 12,
-      dateOfJoining: '2018-08-20',
-      salary: 68000,
-      address: '456 Pine Avenue, City, State',
-      emergencyContact: '+1234567893',
-      status: 'Active',
-      totalStudents: 65,
-      activeBatches: 3
-    },
-    {
-      id: 3,
-      firstName: 'Emily',
-      lastName: 'Davis',
-      email: 'emily.davis@edudemy.com',
-      phone: '+1234567894',
-      subject: 'Physics',
-      qualification: 'PhD in Physics',
-      experience: 6,
-      dateOfJoining: '2021-03-10',
-      salary: 70000,
-      address: '789 Maple Drive, City, State',
-      emergencyContact: '+1234567895',
-      status: 'Active',
-      totalStudents: 48,
-      activeBatches: 2
-    },
-    {
-      id: 4,
-      firstName: 'Michael',
-      lastName: 'Brown',
-      email: 'michael.brown@edudemy.com',
-      phone: '+1234567896',
-      subject: 'Chemistry',
-      qualification: 'Master in Chemistry',
-      experience: 4,
-      dateOfJoining: '2022-01-05',
-      salary: 62000,
-      address: '321 Cedar Lane, City, State',
-      emergencyContact: '+1234567897',
-      status: 'On Leave',
-      totalStudents: 0,
-      activeBatches: 0
+  const loadTeachers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await teachersAPI.getTeachers();
+      console.log('Teachers response:', response); // Debug log
+      
+      // Handle different response formats - backend returns array of TeacherRead objects
+      let teacherData;
+      if (Array.isArray(response)) {
+        // Direct array response
+        teacherData = response;
+      } else if (response?.data && Array.isArray(response.data)) {
+        // Wrapped in data property
+        teacherData = response.data;
+      } else if (response?.teachers && Array.isArray(response.teachers)) {
+        // Wrapped in teachers property
+        teacherData = response.teachers;
+      } else {
+        // Fallback
+        teacherData = [];
+      }
+      setTeachers(teacherData);
+    } catch (error) {
+      console.error('Error loading teachers:', error);
+      
+      // Check if it's a server error (500) and provide helpful message
+      if (error.response?.status === 500) {
+        setError('Server error: The backend database may need setup. Please check if the database is properly migrated and the backend server is running correctly.');
+      } else if (error.message === 'Network Error') {
+        setError('Network Error: Cannot connect to the backend server. Please ensure the backend is running on http://127.0.0.1:8000');
+      } else {
+        setError(`Failed to load teachers: ${error.response?.data?.detail || error.message}`);
+      }
+      
+      // Set empty array so UI doesn't break
+      setTeachers([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const subjects = ['Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'English', 'History'];
+  const subjects = ['Bangla', 'English', 'I.C.T', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Multi'];
 
   useEffect(() => {
-    // Simulate API call
-    const timer = setTimeout(() => {
-      setTeachers(mockTeachers);
-      setLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    loadTeachers();
   }, []);
 
   const filteredTeachers = teachers.filter(teacher => {
-    const matchesSearch = (teacher.firstName + ' ' + teacher.lastName).toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         teacher.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         teacher.subject.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSubject = filterSubject === 'all' || teacher.subject === filterSubject;
+    const fullName = `${teacher.first_name || teacher.firstName || ''} ${teacher.last_name || teacher.lastName || ''}`.toLowerCase();
+    const matchesSearch = fullName.includes(searchTerm.toLowerCase()) ||
+                         (teacher.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (teacher.subject || teacher.subjects || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSubject = filterSubject === 'all' || (teacher.subject || teacher.subjects) === filterSubject;
     return matchesSearch && matchesSubject;
   });
 
   const handleAddTeacher = () => {
     setEditingTeacher(null);
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      subject: '',
-      qualification: '',
-      experience: '',
-      dateOfJoining: new Date().toISOString().split('T')[0],
-      salary: '',
-      address: '',
-      emergencyContact: '',
-      status: 'Active'
-    });
     setShowModal(true);
   };
 
   const handleEditTeacher = (teacher) => {
     setEditingTeacher(teacher);
-    setFormData({
-      ...teacher,
-      experience: teacher.experience.toString(),
-      salary: teacher.salary.toString()
-    });
     setShowModal(true);
   };
 
-  const handleDeleteTeacher = (teacherId) => {
+  const handleDeleteTeacher = async (teacherId) => {
     if (window.confirm('Are you sure you want to delete this teacher? This action cannot be undone.')) {
-      setTeachers(teachers.filter(t => t.id !== teacherId));
+      try {
+        await teachersAPI.deleteTeacher(teacherId);
+        await loadTeachers(); // Refresh the list
+        alert('Teacher deleted successfully');
+      } catch (error) {
+        console.error('Error deleting teacher:', error);
+        alert('Failed to delete teacher. Please try again.');
+      }
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (editingTeacher) {
-      // Update existing teacher
-      setTeachers(teachers.map(t => 
-        t.id === editingTeacher.id 
-          ? { 
-              ...formData, 
-              id: editingTeacher.id,
-              experience: parseInt(formData.experience),
-              salary: parseFloat(formData.salary),
-              totalStudents: editingTeacher.totalStudents,
-              activeBatches: editingTeacher.activeBatches
-            } 
-          : t
-      ));
-    } else {
-      // Add new teacher
-      const newTeacher = {
-        ...formData,
-        id: Date.now(),
-        experience: parseInt(formData.experience),
-        salary: parseFloat(formData.salary),
-        totalStudents: 0,
-        activeBatches: 0
-      };
-      setTeachers([...teachers, newTeacher]);
+  const handleSubmit = async (teacherData) => {
+    try {
+      if (editingTeacher) {
+        // Update existing teacher
+        await teachersAPI.updateTeacher(editingTeacher.id, teacherData);
+        alert('Teacher updated successfully');
+      } else {
+        // Add new teacher
+        await teachersAPI.createTeacher(teacherData);
+        alert('Teacher created successfully');
+      }
+      
+      setShowModal(false);
+      setEditingTeacher(null);
+      await loadTeachers(); // Refresh the list
+    } catch (error) {
+      console.error('Error saving teacher:', error);
+      throw error; // Let TeacherForm handle the error display
     }
-    
+  };
+  
+  const handleCancel = () => {
     setShowModal(false);
     setEditingTeacher(null);
   };
 
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
+  // Helper functions for backward compatibility
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'Active': return 'status-active';
-      case 'On Leave': return 'status-pending';
-      case 'Inactive': return 'status-inactive';
-      default: return 'status-inactive';
+    switch (status?.toLowerCase()) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'on leave':
+      case 'inactive':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -232,6 +164,14 @@ export default function Teachers() {
             Add New Teacher
           </button>
         </div>
+        
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded flex items-center">
+            <AlertCircle size={20} className="mr-2" />
+            {error}
+          </div>
+        )}
 
         {/* Filters */}
         <div className="card p-6">
@@ -335,33 +275,40 @@ export default function Teachers() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
-                            {teacher.firstName.charAt(0)}{teacher.lastName.charAt(0)}
+                            {(teacher.first_name || teacher.firstName || 'T').charAt(0)}{(teacher.last_name || teacher.lastName || 'U').charAt(0)}
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {teacher.firstName} {teacher.lastName}
+                              {teacher.first_name || teacher.firstName} {teacher.last_name || teacher.lastName}
                             </div>
-                            <div className="text-sm text-gray-500">{teacher.qualification}</div>
+                            <div className="text-sm text-gray-500">{teacher.qualification || 'No qualification listed'}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{teacher.email}</div>
-                        <div className="text-sm text-gray-500">{teacher.phone}</div>
+                        <div className="text-sm text-gray-500">{teacher.phone || teacher.contact_number || 'No phone'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{teacher.subject}</div>
+                        <div className="text-sm text-gray-900">{teacher.subjects || teacher.subject || 'No subject'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {teacher.experience} years
+                        {teacher.experience_years || teacher.experience || 0} years
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{teacher.activeBatches} batches</div>
-                        <div className="text-sm text-gray-500">{teacher.totalStudents} students</div>
+                        <div className="text-sm text-gray-900">{teacher.activeBatches || 0} batches</div>
+                        <div className="text-sm text-gray-500">{teacher.totalStudents || 0} students</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(teacher.status)}`}>
-                          {teacher.status}
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          (teacher.is_active !== undefined ? teacher.is_active : teacher.status === 'Active') 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {teacher.is_active !== undefined 
+                            ? (teacher.is_active ? 'Active' : 'Inactive')
+                            : (teacher.status || 'Unknown')
+                          }
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -407,212 +354,14 @@ export default function Teachers() {
           )}
         </div>
 
-        {/* Modal */}
+        {/* Teacher Form Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between p-6 border-b">
-                <h3 className="text-lg font-medium text-gray-900">
-                  {editingTeacher ? 'Edit Teacher' : 'Add New Teacher'}
-                </h3>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Personal Information */}
-                  <div className="space-y-4">
-                    <h4 className="text-md font-medium text-gray-900 flex items-center">
-                      <UserCheck size={20} className="mr-2" />
-                      Personal Information
-                    </h4>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
-                      <input
-                        type="text"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
-                      <input
-                        type="text"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                      <textarea
-                        name="address"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                        rows="3"
-                        className="input-field"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Emergency Contact</label>
-                      <input
-                        type="tel"
-                        name="emergencyContact"
-                        value={formData.emergencyContact}
-                        onChange={handleInputChange}
-                        className="input-field"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Professional Information */}
-                  <div className="space-y-4">
-                    <h4 className="text-md font-medium text-gray-900 flex items-center">
-                      <GraduationCap size={20} className="mr-2" />
-                      Professional Information
-                    </h4>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Subject/Specialization *</label>
-                      <select
-                        name="subject"
-                        value={formData.subject}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                      >
-                        <option value="">Select Subject</option>
-                        {subjects.map(subject => (
-                          <option key={subject} value={subject}>{subject}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Qualification *</label>
-                      <input
-                        type="text"
-                        name="qualification"
-                        value={formData.qualification}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                        placeholder="e.g., PhD in Computer Science"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Experience (years) *</label>
-                      <input
-                        type="number"
-                        name="experience"
-                        value={formData.experience}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                        min="0"
-                        max="50"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Date of Joining *</label>
-                      <input
-                        type="date"
-                        name="dateOfJoining"
-                        value={formData.dateOfJoining}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Salary *</label>
-                      <input
-                        type="number"
-                        name="salary"
-                        value={formData.salary}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
-                      <select
-                        name="status"
-                        value={formData.status}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                      >
-                        <option value="Active">Active</option>
-                        <option value="On Leave">On Leave</option>
-                        <option value="Inactive">Inactive</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-6 border-t mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn-primary inline-flex items-center">
-                    <Save size={20} className="mr-2" />
-                    {editingTeacher ? 'Update Teacher' : 'Add Teacher'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+          <TeacherForm
+            teacher={editingTeacher}
+            mode={editingTeacher ? 'edit' : 'create'}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+          />
         )}
       </div>
     </Layout>

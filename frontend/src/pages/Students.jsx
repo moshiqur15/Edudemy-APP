@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
+import StudentForm from '../components/forms/StudentForm';
+import { studentsAPI } from '../services/api';
 import { 
   Plus, 
   Search, 
@@ -25,153 +27,99 @@ export default function Students() {
   const [filterBatch, setFilterBatch] = useState('all');
   const [showModal, setShowModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    dateOfBirth: '',
-    address: '',
-    batch: '',
-    enrollmentDate: '',
-    parentName: '',
-    parentPhone: '',
-    parentEmail: '',
-    previousSchool: '',
-    grade: ''
-  });
+  const [error, setError] = useState(null);
 
-  // Mock data - replace with real API calls
-  const mockStudents = [
-    {
-      id: 1,
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@email.com',
-      phone: '+1234567890',
-      batch: 'Computer Science A',
-      enrollmentDate: '2024-01-15',
-      status: 'Active',
-      grade: '10th',
-      parentName: 'Robert Doe',
-      parentPhone: '+1234567891',
-      parentEmail: 'robert.doe@email.com',
-      address: '123 Main St, City, State',
-      dateOfBirth: '2006-05-15',
-      previousSchool: 'City High School'
-    },
-    {
-      id: 2,
-      firstName: 'Jane',
-      lastName: 'Smith',
-      email: 'jane.smith@email.com',
-      phone: '+1234567892',
-      batch: 'Mathematics B',
-      enrollmentDate: '2024-02-01',
-      status: 'Active',
-      grade: '11th',
-      parentName: 'Mary Smith',
-      parentPhone: '+1234567893',
-      parentEmail: 'mary.smith@email.com',
-      address: '456 Oak Ave, City, State',
-      dateOfBirth: '2005-08-22',
-      previousSchool: 'Metro Academy'
-    },
-    {
-      id: 3,
-      firstName: 'Michael',
-      lastName: 'Johnson',
-      email: 'michael.j@email.com',
-      phone: '+1234567894',
-      batch: 'Physics C',
-      enrollmentDate: '2024-01-20',
-      status: 'Inactive',
-      grade: '12th',
-      parentName: 'David Johnson',
-      parentPhone: '+1234567895',
-      parentEmail: 'david.j@email.com',
-      address: '789 Pine St, City, State',
-      dateOfBirth: '2004-12-10',
-      previousSchool: 'Central High'
+  const loadStudents = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await studentsAPI.getStudents();
+      console.log('Students response:', response); // Debug log
+      
+      // Handle different response formats
+      const studentData = response?.students || response?.data?.students || response?.data || response || [];
+      setStudents(Array.isArray(studentData) ? studentData : []);
+    } catch (error) {
+      console.error('Error loading students:', error);
+      setError(`Failed to load students: ${error.response?.data?.detail || error.message}`);
+      setStudents([]);
+    } finally {
+      setLoading(false);
     }
-  ];
-
-  const batches = ['Computer Science A', 'Mathematics B', 'Physics C', 'Chemistry D', 'Biology E'];
+  };
 
   useEffect(() => {
-    // Simulate API call
-    const timer = setTimeout(() => {
-      setStudents(mockStudents);
-      setLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    loadStudents();
   }, []);
+  
+  // Get unique batches from students for filtering
+  const getUniqueBatches = () => {
+    const batches = new Set();
+    students.forEach(student => {
+      if (student.batch_id) {
+        // Add batch name if available, otherwise use ID
+        batches.add(student.batch?.name || `Batch ${student.batch_id}`);
+      }
+    });
+    return Array.from(batches);
+  };
+
+  const uniqueBatches = getUniqueBatches();
 
   const filteredStudents = students.filter(student => {
-    const matchesSearch = (student.firstName + ' ' + student.lastName).toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesBatch = filterBatch === 'all' || student.batch === filterBatch;
+    const matchesSearch = (student.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (student.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (student.student_reg_number || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesBatch = filterBatch === 'all' || 
+                        (student.batch?.name === filterBatch) ||
+                        (`Batch ${student.batch_id}` === filterBatch);
     return matchesSearch && matchesBatch;
   });
 
   const handleAddStudent = () => {
     setEditingStudent(null);
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      dateOfBirth: '',
-      address: '',
-      batch: '',
-      enrollmentDate: new Date().toISOString().split('T')[0],
-      parentName: '',
-      parentPhone: '',
-      parentEmail: '',
-      previousSchool: '',
-      grade: ''
-    });
     setShowModal(true);
   };
 
   const handleEditStudent = (student) => {
     setEditingStudent(student);
-    setFormData(student);
     setShowModal(true);
   };
 
-  const handleDeleteStudent = (studentId) => {
+  const handleDeleteStudent = async (studentId) => {
     if (window.confirm('Are you sure you want to delete this student?')) {
-      setStudents(students.filter(s => s.id !== studentId));
+      try {
+        await studentsAPI.deleteStudent(studentId);
+        await loadStudents(); // Refresh the list
+      } catch (error) {
+        console.error('Error deleting student:', error);
+        alert('Failed to delete student. Please try again.');
+      }
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (editingStudent) {
-      // Update existing student
-      setStudents(students.map(s => s.id === editingStudent.id ? { ...formData, id: editingStudent.id } : s));
-    } else {
-      // Add new student
-      const newStudent = {
-        ...formData,
-        id: Date.now(),
-        status: 'Active'
-      };
-      setStudents([...students, newStudent]);
+  const handleSubmit = async (studentData) => {
+    try {
+      if (editingStudent) {
+        // Update existing student
+        await studentsAPI.updateStudent(editingStudent.id, studentData);
+      } else {
+        // Add new student
+        await studentsAPI.createStudent(studentData);
+      }
+      
+      setShowModal(false);
+      setEditingStudent(null);
+      await loadStudents(); // Refresh the list
+    } catch (error) {
+      console.error('Error saving student:', error);
+      throw error; // Let StudentForm handle the error display
     }
-    
+  };
+
+  const handleCancel = () => {
     setShowModal(false);
     setEditingStudent(null);
-  };
-
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
   };
 
   return (
@@ -191,6 +139,13 @@ export default function Students() {
             Add New Student
           </button>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
 
         {/* Filters */}
         <div className="card p-6">
@@ -215,7 +170,7 @@ export default function Students() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Batches</option>
-                {batches.map(batch => (
+                {uniqueBatches.map(batch => (
                   <option key={batch} value={batch}>{batch}</option>
                 ))}
               </select>
@@ -289,31 +244,31 @@ export default function Students() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
-                            {student.firstName.charAt(0)}{student.lastName.charAt(0)}
+                            {student.full_name ? student.full_name.charAt(0) : 'S'}
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {student.firstName} {student.lastName}
+                              {student.full_name || 'N/A'}
                             </div>
-                            <div className="text-sm text-gray-500">Grade {student.grade}</div>
+                            <div className="text-sm text-gray-500">
+                              {student.student_reg_number || 'No ID'} | {student.class_name || 'No Class'}
+                            </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{student.email}</div>
-                        <div className="text-sm text-gray-500">{student.phone}</div>
+                        <div className="text-sm text-gray-900">{student.email || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">{student.phone || student.father_contact || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{student.batch}</div>
+                        <div className="text-sm text-gray-900">{student.batch?.name || 'No Batch'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(student.enrollmentDate).toLocaleDateString()}
+                        {student.admission_date ? new Date(student.admission_date).toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          student.status === 'Active' ? 'status-active' : 'status-inactive'
-                        }`}>
-                          {student.status}
+                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          Active
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -362,215 +317,27 @@ export default function Students() {
         {/* Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between p-6 border-b">
                 <h3 className="text-lg font-medium text-gray-900">
                   {editingStudent ? 'Edit Student' : 'Add New Student'}
                 </h3>
                 <button
-                  onClick={() => setShowModal(false)}
+                  onClick={handleCancel}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <X size={24} />
                 </button>
               </div>
-
-              <form onSubmit={handleSubmit} className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Personal Information */}
-                  <div className="space-y-4">
-                    <h4 className="text-md font-medium text-gray-900 flex items-center">
-                      <Users size={20} className="mr-2" />
-                      Personal Information
-                    </h4>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
-                      <input
-                        type="text"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
-                      <input
-                        type="text"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        className="input-field"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                      <input
-                        type="date"
-                        name="dateOfBirth"
-                        value={formData.dateOfBirth}
-                        onChange={handleInputChange}
-                        className="input-field"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                      <textarea
-                        name="address"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                        rows="3"
-                        className="input-field"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Academic & Parent Information */}
-                  <div className="space-y-4">
-                    <h4 className="text-md font-medium text-gray-900 flex items-center">
-                      <GraduationCap size={20} className="mr-2" />
-                      Academic Information
-                    </h4>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Grade *</label>
-                      <select
-                        name="grade"
-                        value={formData.grade}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                      >
-                        <option value="">Select Grade</option>
-                        <option value="9th">9th Grade</option>
-                        <option value="10th">10th Grade</option>
-                        <option value="11th">11th Grade</option>
-                        <option value="12th">12th Grade</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Batch *</label>
-                      <select
-                        name="batch"
-                        value={formData.batch}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                      >
-                        <option value="">Select Batch</option>
-                        {batches.map(batch => (
-                          <option key={batch} value={batch}>{batch}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Enrollment Date *</label>
-                      <input
-                        type="date"
-                        name="enrollmentDate"
-                        value={formData.enrollmentDate}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Previous School</label>
-                      <input
-                        type="text"
-                        name="previousSchool"
-                        value={formData.previousSchool}
-                        onChange={handleInputChange}
-                        className="input-field"
-                      />
-                    </div>
-
-                    <h4 className="text-md font-medium text-gray-900 flex items-center pt-4">
-                      <Phone size={20} className="mr-2" />
-                      Parent/Guardian Information
-                    </h4>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Parent/Guardian Name</label>
-                      <input
-                        type="text"
-                        name="parentName"
-                        value={formData.parentName}
-                        onChange={handleInputChange}
-                        className="input-field"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Parent Phone</label>
-                      <input
-                        type="tel"
-                        name="parentPhone"
-                        value={formData.parentPhone}
-                        onChange={handleInputChange}
-                        className="input-field"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Parent Email</label>
-                      <input
-                        type="email"
-                        name="parentEmail"
-                        value={formData.parentEmail}
-                        onChange={handleInputChange}
-                        className="input-field"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-6 border-t mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn-primary inline-flex items-center">
-                    <Save size={20} className="mr-2" />
-                    {editingStudent ? 'Update Student' : 'Add Student'}
-                  </button>
-                </div>
-              </form>
+              
+              <div className="p-6">
+                <StudentForm
+                  student={editingStudent}
+                  onSubmit={handleSubmit}
+                  onCancel={handleCancel}
+                  mode={editingStudent ? 'edit' : 'create'}
+                />
+              </div>
             </div>
           </div>
         )}

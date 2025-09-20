@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
+import BatchForm from '../components/forms/BatchForm';
+import BatchStudentAssignment from '../components/batch/BatchStudentAssignment';
+import { academicsAPI } from '../services/api';
 import { 
   Plus, 
   Search, 
@@ -9,212 +12,173 @@ import {
   BookOpen,
   Calendar,
   Clock,
-  X,
-  Save,
   User,
   GraduationCap,
-  MapPin
+  MapPin,
+  UserPlus,
+  Filter
 } from 'lucide-react';
 
 export default function Batches() {
   const [batches, setBatches] = useState([]);
-  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [classFilter, setClassFilter] = useState('');
+  const [versionFilter, setVersionFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showStudentAssignment, setShowStudentAssignment] = useState(false);
+  const [selectedBatchId, setSelectedBatchId] = useState(null);
   const [editingBatch, setEditingBatch] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    subject: '',
-    description: '',
-    teacherId: '',
-    maxCapacity: '',
-    schedule: '',
-    startDate: '',
-    endDate: '',
-    room: '',
-    fees: '',
-    status: 'Active'
-  });
 
-  // Mock data - replace with real API calls
-  const mockBatches = [
-    {
-      id: 1,
-      name: 'Computer Science A',
-      subject: 'Computer Science',
-      description: 'Advanced computer science concepts including algorithms and data structures',
-      teacher: 'Dr. Sarah Wilson',
-      teacherId: 1,
-      currentStudents: 24,
-      maxCapacity: 30,
-      schedule: 'Mon, Wed, Fri - 09:00 AM',
-      startDate: '2024-01-15',
-      endDate: '2024-06-15',
-      room: 'Room 101',
-      fees: 5000,
-      status: 'Active'
-    },
-    {
-      id: 2,
-      name: 'Mathematics B',
-      subject: 'Mathematics',
-      description: 'Calculus and advanced mathematical concepts',
-      teacher: 'Prof. John Smith',
-      teacherId: 2,
-      currentStudents: 22,
-      maxCapacity: 25,
-      schedule: 'Tue, Thu - 11:00 AM',
-      startDate: '2024-02-01',
-      endDate: '2024-07-01',
-      room: 'Room 203',
-      fees: 4500,
-      status: 'Active'
-    },
-    {
-      id: 3,
-      name: 'Physics C',
-      subject: 'Physics',
-      description: 'Quantum physics and modern physics concepts',
-      teacher: 'Dr. Emily Davis',
-      teacherId: 3,
-      currentStudents: 18,
-      maxCapacity: 20,
-      schedule: 'Mon, Wed - 02:00 PM',
-      startDate: '2024-01-20',
-      endDate: '2024-06-20',
-      room: 'Lab 205',
-      fees: 5500,
-      status: 'Active'
-    },
-    {
-      id: 4,
-      name: 'Chemistry D',
-      subject: 'Chemistry',
-      description: 'Organic chemistry fundamentals',
-      teacher: 'Prof. Michael Brown',
-      teacherId: 4,
-      currentStudents: 0,
-      maxCapacity: 25,
-      schedule: 'Tue, Fri - 03:00 PM',
-      startDate: '2024-03-01',
-      endDate: '2024-08-01',
-      room: 'Lab 301',
-      fees: 4800,
-      status: 'Draft'
-    }
+  const classOptions = [
+    'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'SSC',
+    'HSC 1st Year', 'HSC 2nd Year'
   ];
 
-  const mockTeachers = [
-    { id: 1, name: 'Dr. Sarah Wilson', subject: 'Computer Science' },
-    { id: 2, name: 'Prof. John Smith', subject: 'Mathematics' },
-    { id: 3, name: 'Dr. Emily Davis', subject: 'Physics' },
-    { id: 4, name: 'Prof. Michael Brown', subject: 'Chemistry' },
-    { id: 5, name: 'Dr. Lisa Johnson', subject: 'Biology' },
+  const statusOptions = [
+    { value: 'upcoming', label: 'Upcoming' },
+    { value: 'active', label: 'Active' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'cancelled', label: 'Cancelled' }
   ];
-
-  const subjects = ['Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'English', 'History'];
 
   useEffect(() => {
-    // Simulate API call
-    const timer = setTimeout(() => {
-      setBatches(mockBatches);
-      setTeachers(mockTeachers);
-      setLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    fetchBatches();
   }, []);
 
-  const filteredBatches = batches.filter(batch =>
-    batch.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    batch.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    batch.teacher.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const fetchBatches = async () => {
+    setLoading(true);
+    try {
+      const response = await academicsAPI.getBatches();
+      console.log('Batches response:', response); // Debug log
+      // Handle different response formats - the API returns an array of BatchWithStats objects
+      let batchData;
+      if (Array.isArray(response)) {
+        // Direct array response
+        batchData = response;
+      } else if (response?.data && Array.isArray(response.data)) {
+        // Wrapped in data property
+        batchData = response.data;
+      } else if (response?.batches && Array.isArray(response.batches)) {
+        // Wrapped in batches property
+        batchData = response.batches;
+      } else {
+        // Fallback
+        batchData = [];
+      }
+      setBatches(batchData);
+    } catch (error) {
+      console.error('Error fetching batches:', error);
+      setBatches([]);
+      
+      // Provide specific error messages based on error type
+      let errorMessage;
+      if (error.response?.status === 500) {
+        errorMessage = 'Server Error: The backend database may need setup. Please check if the database is properly migrated and the backend server is running correctly.';
+      } else if (error.message === 'Network Error') {
+        errorMessage = 'Network Error: Cannot connect to the backend server. Please ensure the backend is running on http://127.0.0.1:8000';
+      } else {
+        errorMessage = 'Error loading batches: ' + (error.response?.data?.detail || error.message);
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredBatches = batches.filter(batch => {
+    const batchData = batch.batch || batch;
+    const matchesSearch = batchData.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         batchData.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         batchData.course?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         batchData.class_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = !statusFilter || batchData.status === statusFilter;
+    const matchesClass = !classFilter || batchData.class_name === classFilter;
+    const matchesVersion = !versionFilter || batchData.version === versionFilter;
+    
+    return matchesSearch && matchesStatus && matchesClass && matchesVersion;
+  });
 
   const handleAddBatch = () => {
     setEditingBatch(null);
-    setFormData({
-      name: '',
-      subject: '',
-      description: '',
-      teacherId: '',
-      maxCapacity: '',
-      schedule: '',
-      startDate: '',
-      endDate: '',
-      room: '',
-      fees: '',
-      status: 'Active'
-    });
     setShowModal(true);
   };
 
   const handleEditBatch = (batch) => {
     setEditingBatch(batch);
-    setFormData({
-      ...batch,
-      teacherId: batch.teacherId.toString()
-    });
     setShowModal(true);
   };
 
-  const handleDeleteBatch = (batchId) => {
-    if (window.confirm('Are you sure you want to delete this batch? This action cannot be undone.')) {
-      setBatches(batches.filter(b => b.id !== batchId));
+  const handleDeleteBatch = async (batchId) => {
+    if (window.confirm('Are you sure you want to delete this batch? This will deactivate the batch but preserve student records.')) {
+      try {
+        await academicsAPI.deleteBatch(batchId);
+        await fetchBatches();
+        alert('Batch deleted successfully');
+      } catch (error) {
+        console.error('Error deleting batch:', error);
+        alert('Error deleting batch');
+      }
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    const selectedTeacher = teachers.find(t => t.id === parseInt(formData.teacherId));
-    
-    if (editingBatch) {
-      // Update existing batch
-      setBatches(batches.map(b => 
-        b.id === editingBatch.id 
-          ? { 
-              ...formData, 
-              id: editingBatch.id, 
-              teacher: selectedTeacher?.name || '',
-              teacherId: parseInt(formData.teacherId),
-              currentStudents: editingBatch.currentStudents,
-              maxCapacity: parseInt(formData.maxCapacity),
-              fees: parseFloat(formData.fees)
-            } 
-          : b
-      ));
-    } else {
-      // Add new batch
-      const newBatch = {
-        ...formData,
-        id: Date.now(),
-        teacher: selectedTeacher?.name || '',
-        teacherId: parseInt(formData.teacherId),
-        currentStudents: 0,
-        maxCapacity: parseInt(formData.maxCapacity),
-        fees: parseFloat(formData.fees)
-      };
-      setBatches([...batches, newBatch]);
+  const handleAssignStudents = (batch) => {
+    const batchId = batch.batch?.id || batch.id;
+    setSelectedBatchId(batchId);
+    setShowStudentAssignment(true);
+  };
+
+  const handleFormSubmit = async (formData) => {
+    try {
+      console.log('Saving batch data:', formData); // Debug log
+      
+      if (editingBatch) {
+        const batchId = editingBatch.batch?.id || editingBatch.id;
+        console.log('Updating batch ID:', batchId); // Debug log
+        const result = await academicsAPI.updateBatch(batchId, formData);
+        console.log('Update result:', result); // Debug log
+        alert('Batch updated successfully');
+      } else {
+        console.log('Creating new batch'); // Debug log
+        const result = await academicsAPI.createBatch(formData);
+        console.log('Create result:', result); // Debug log
+        alert('Batch created successfully');
+      }
+      
+      setShowModal(false);
+      setEditingBatch(null);
+      await fetchBatches();
+    } catch (error) {
+      console.error('Error saving batch:', error);
+      console.error('Error details:', error.response); // Debug log
+      
+      let errorMessage = 'Error saving batch';
+      if (error.response?.data?.detail) {
+        errorMessage = `Error: ${error.response.data.detail}`;
+      } else if (error.response?.data?.message) {
+        errorMessage = `Error: ${error.response.data.message}`;
+      } else if (error.message) {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
+      alert(errorMessage);
+      throw error; // Re-throw to let BatchForm handle it
     }
-    
+  };
+
+  const handleFormCancel = () => {
     setShowModal(false);
     setEditingBatch(null);
   };
 
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'Active': return 'status-active';
-      case 'Draft': return 'status-pending';
-      case 'Completed': return 'status-inactive';
+    switch (status?.toLowerCase()) {
+      case 'active': return 'status-active';
+      case 'upcoming': return 'status-pending';
+      case 'completed': return 'status-inactive';
+      case 'cancelled': return 'status-inactive';
       default: return 'status-inactive';
     }
   };
@@ -244,18 +208,86 @@ export default function Batches() {
           </button>
         </div>
 
-        {/* Search */}
+        {/* Search and Filters */}
         <div className="card p-6">
-          <div className="relative max-w-md">
-            <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search batches by name, subject, or teacher..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search batches by name, code, course, or class..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            
+            <div className="flex gap-3">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Status</option>
+                {statusOptions.map(status => (
+                  <option key={status.value} value={status.value}>{status.label}</option>
+                ))}
+              </select>
+              
+              <select
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Classes</option>
+                {classOptions.map(cls => (
+                  <option key={cls} value={cls}>{cls}</option>
+                ))}
+              </select>
+              
+              <select
+                value={versionFilter}
+                onChange={(e) => setVersionFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Versions</option>
+                <option value="BV">BV</option>
+                <option value="EV">EV</option>
+              </select>
+            </div>
           </div>
+          
+          {(statusFilter || classFilter || versionFilter) && (
+            <div className="mt-3 flex items-center gap-2">
+              <Filter size={16} className="text-gray-400" />
+              <span className="text-sm text-gray-600">Active filters:</span>
+              {statusFilter && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                  Status: {statusOptions.find(s => s.value === statusFilter)?.label}
+                </span>
+              )}
+              {classFilter && (
+                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                  Class: {classFilter}
+                </span>
+              )}
+              {versionFilter && (
+                <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                  Version: {versionFilter}
+                </span>
+              )}
+              <button
+                onClick={() => {
+                  setStatusFilter('');
+                  setClassFilter('');
+                  setVersionFilter('');
+                }}
+                className="text-sm text-gray-500 hover:text-gray-700 underline"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Batches Grid */}
@@ -281,85 +313,107 @@ export default function Batches() {
               </div>
             ))
           ) : (
-            filteredBatches.map((batch) => (
-              <div key={batch.id} className="card p-6 hover:shadow-lg transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{batch.name}</h3>
-                    <p className="text-sm text-gray-600">{batch.subject}</p>
-                  </div>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(batch.status)}`}>
-                    {batch.status}
-                  </span>
-                </div>
-
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">{batch.description}</p>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <User size={16} className="mr-2" />
-                    {batch.teacher}
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Clock size={16} className="mr-2" />
-                    {batch.schedule}
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <MapPin size={16} className="mr-2" />
-                    {batch.room}
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Calendar size={16} className="mr-2" />
-                    {new Date(batch.startDate).toLocaleDateString()} - {new Date(batch.endDate).toLocaleDateString()}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-sm">
-                    <span className="text-gray-600">Students: </span>
-                    <span className={`font-medium ${getCapacityColor(batch.currentStudents, batch.maxCapacity)}`}>
-                      {batch.currentStudents}/{batch.maxCapacity}
+            filteredBatches.map((batch) => {
+              const batchData = batch.batch || batch;
+              const studentCount = batchData.student_count || (batch.students ? batch.students.length : 0);
+              
+              return (
+                <div key={batchData.id} className="card p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{batchData.name}</h3>
+                      <p className="text-sm text-gray-600">{batchData.code} • {batchData.class_name} ({batchData.version})</p>
+                    </div>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(batchData.status)}`}>
+                      {batchData.status?.charAt(0).toUpperCase() + batchData.status?.slice(1)}
                     </span>
                   </div>
-                  <div className="text-sm font-medium text-gray-900">
-                    ${batch.fees.toLocaleString()}
+
+                  {batchData.course && (
+                    <p className="text-sm text-gray-600 mb-3">
+                      <GraduationCap size={14} className="inline mr-1" />
+                      {batchData.course}
+                    </p>
+                  )}
+
+                  <div className="space-y-2 mb-4">
+                    {batchData.time_slot && (
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Clock size={16} className="mr-2" />
+                        {batchData.time_slot}
+                      </div>
+                    )}
+                    {batchData.schedule_days && (
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar size={16} className="mr-2" />
+                        {JSON.parse(batchData.schedule_days || '[]').join(', ')}
+                      </div>
+                    )}
+                    {(batchData.start_date || batchData.end_date) && (
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar size={16} className="mr-2" />
+                        {batchData.start_date ? new Date(batchData.start_date).toLocaleDateString() : 'TBD'} - {batchData.end_date ? new Date(batchData.end_date).toLocaleDateString() : 'TBD'}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="text-sm">
+                      <span className="text-gray-600">Students: </span>
+                      <span className={`font-medium ${getCapacityColor(studentCount, batchData.max_students)}`}>
+                        {studentCount}/{batchData.max_students}
+                      </span>
+                    </div>
+                    {batchData.fee_amount && (
+                      <div className="text-sm font-medium text-gray-900">
+                        ৳{parseFloat(batchData.fee_amount).toLocaleString()}
+                        {batchData.discount_percentage > 0 && (
+                          <span className="text-xs text-green-600 ml-1">({batchData.discount_percentage}% off)</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                    <div
+                      className={`h-2 rounded-full ${
+                        (studentCount / batchData.max_students) * 100 >= 90
+                          ? 'bg-red-500'
+                          : (studentCount / batchData.max_students) * 100 >= 75
+                          ? 'bg-yellow-500'
+                          : 'bg-green-500'
+                      }`}
+                      style={{ width: `${Math.min((studentCount / batchData.max_students) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={() => handleAssignStudents(batch)}
+                      className="btn-primary text-sm flex-1 py-2"
+                    >
+                      <UserPlus size={16} className="mr-1" />
+                      Manage Students
+                    </button>
+                    <button
+                      onClick={() => handleEditBatch(batch)}
+                      className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded"
+                      title="Edit batch"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteBatch(batchData.id)}
+                      className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded"
+                      title="Delete batch"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </div>
-
-                {/* Progress bar */}
-                <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-                  <div
-                    className={`h-2 rounded-full ${
-                      (batch.currentStudents / batch.maxCapacity) * 100 >= 90
-                        ? 'bg-red-500'
-                        : (batch.currentStudents / batch.maxCapacity) * 100 >= 75
-                        ? 'bg-yellow-500'
-                        : 'bg-green-500'
-                    }`}
-                    style={{ width: `${(batch.currentStudents / batch.maxCapacity) * 100}%` }}
-                  ></div>
-                </div>
-
-                <div className="flex space-x-2">
-                  <button className="btn-primary text-sm flex-1 py-2">
-                    <Users size={16} className="mr-1" />
-                    View Students
-                  </button>
-                  <button
-                    onClick={() => handleEditBatch(batch)}
-                    className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded"
-                  >
-                    <Edit size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteBatch(batch.id)}
-                    className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -382,194 +436,26 @@ export default function Batches() {
           </div>
         )}
 
-        {/* Modal */}
+        {/* Batch Form Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between p-6 border-b">
-                <h3 className="text-lg font-medium text-gray-900">
-                  {editingBatch ? 'Edit Batch' : 'Create New Batch'}
-                </h3>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X size={24} />
-                </button>
-              </div>
+          <BatchForm
+            batch={editingBatch}
+            mode={editingBatch ? 'edit' : 'create'}
+            onSubmit={handleFormSubmit}
+            onCancel={handleFormCancel}
+          />
+        )}
 
-              <form onSubmit={handleSubmit} className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Batch Name *</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      required
-                      placeholder="e.g., Computer Science A"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
-                    <select
-                      name="subject"
-                      value={formData.subject}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      required
-                    >
-                      <option value="">Select Subject</option>
-                      {subjects.map(subject => (
-                        <option key={subject} value={subject}>{subject}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      rows="3"
-                      className="input-field"
-                      placeholder="Brief description of the batch curriculum and objectives"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Teacher *</label>
-                    <select
-                      name="teacherId"
-                      value={formData.teacherId}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      required
-                    >
-                      <option value="">Select Teacher</option>
-                      {teachers.map(teacher => (
-                        <option key={teacher.id} value={teacher.id}>
-                          {teacher.name} - {teacher.subject}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Capacity *</label>
-                    <input
-                      type="number"
-                      name="maxCapacity"
-                      value={formData.maxCapacity}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      required
-                      min="1"
-                      max="100"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Schedule *</label>
-                    <input
-                      type="text"
-                      name="schedule"
-                      value={formData.schedule}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      required
-                      placeholder="e.g., Mon, Wed, Fri - 09:00 AM"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Room/Location *</label>
-                    <input
-                      type="text"
-                      name="room"
-                      value={formData.room}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      required
-                      placeholder="e.g., Room 101 or Lab 205"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
-                    <input
-                      type="date"
-                      name="startDate"
-                      value={formData.startDate}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
-                    <input
-                      type="date"
-                      name="endDate"
-                      value={formData.endDate}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Batch Fees *</label>
-                    <input
-                      type="number"
-                      name="fees"
-                      value={formData.fees}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      required
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      required
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Draft">Draft</option>
-                      <option value="Completed">Completed</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-6 border-t mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn-primary inline-flex items-center">
-                    <Save size={20} className="mr-2" />
-                    {editingBatch ? 'Update Batch' : 'Create Batch'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+        {/* Student Assignment Modal */}
+        {showStudentAssignment && (
+          <BatchStudentAssignment
+            batchId={selectedBatchId}
+            onClose={() => {
+              setShowStudentAssignment(false);
+              setSelectedBatchId(null);
+            }}
+            onUpdate={fetchBatches}
+          />
         )}
       </div>
     </Layout>

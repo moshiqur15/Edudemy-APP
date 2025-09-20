@@ -21,12 +21,16 @@ def get_current_user(token: str = Depends(oauth2_scheme), session: Session = Dep
 
 def require_role(*roles):
     def _role_checker(current_user: User = Depends(get_current_user)):
-        if current_user.role.value not in roles:
+        # Handle both enum and string roles
+        user_role = current_user.role.value if hasattr(current_user.role, 'value') else current_user.role
+        if user_role not in roles:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
         return current_user
     return _role_checker
 
 def require_admin(current_user: User = Depends(get_current_user)):
-    if current_user.role.value != "admin":
+    # Handle both enum and string roles
+    user_role = current_user.role.value if hasattr(current_user.role, 'value') else current_user.role
+    if user_role not in ['admin', 'superadmin']:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return current_user

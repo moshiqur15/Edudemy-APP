@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from .models import UserRole, NotificationType, MessageType, FeedbackType, BehaviorType
+from .models import UserRole, NotificationType, MessageType, FeedbackType, BehaviorType, Gender, StudentVersion
 
 class Token(BaseModel):
     access_token: str
@@ -51,23 +51,92 @@ class LoginRequest(BaseModel):
     password: str
 
 class StudentCreate(BaseModel):
+    # Basic Information (Required)
     full_name: str
-    phone: Optional[str]
-    email: Optional[str]
-    batch_id: Optional[int]
+    father_name: str
+    mother_name: str
+    gender: Gender
+    class_name: str
+    version: StudentVersion = StudentVersion.BV
+    
+    # Contact Information
+    student_contact: Optional[str] = None
+    father_contact: Optional[str] = None
+    mother_contact: Optional[str] = None
+    
+    # Additional Information
+    date_of_birth: Optional[datetime] = None
+    address: Optional[str] = None
+    current_school: Optional[str] = None
+    batch_id: Optional[int] = None
+    admission_date: Optional[datetime] = None
+    
+    # Legacy fields (for backward compatibility)
+    phone: Optional[str] = None
+    email: Optional[str] = None
+
+class StudentUpdate(BaseModel):
+    full_name: Optional[str] = None
+    father_name: Optional[str] = None
+    mother_name: Optional[str] = None
+    gender: Optional[Gender] = None
+    class_name: Optional[str] = None
+    version: Optional[StudentVersion] = None
+    student_contact: Optional[str] = None
+    father_contact: Optional[str] = None
+    mother_contact: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
+    address: Optional[str] = None
+    current_school: Optional[str] = None
+    batch_id: Optional[int] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
 
 class StudentRead(BaseModel):
     id: int
+    user_id: Optional[int]
+    
+    # Basic Information
     full_name: str
-    phone: Optional[str]
-    email: Optional[str]
+    father_name: str
+    mother_name: str
+    gender: Gender
+    class_name: str
+    version: StudentVersion
+    
+    # Contact Information
+    student_contact: Optional[str]
+    father_contact: Optional[str]
+    mother_contact: Optional[str]
+    
+    # Academic Information
     batch_id: Optional[int]
-    student_id: Optional[str]
+    current_school: Optional[str]
+    
+    # Generated IDs
+    student_reg_number: Optional[str]
+    student_roll_number: Optional[str]
+    admission_serial: Optional[int]
+    
+    # Additional Information
     date_of_birth: Optional[datetime]
     address: Optional[str]
+    admission_date: Optional[datetime]
+    
+    # Legacy fields
+    phone: Optional[str]
+    email: Optional[str]
+    student_id: Optional[str]
     parent_name: Optional[str]
     parent_phone: Optional[str]
-    admission_date: Optional[datetime]
+
+class StudentIDPreview(BaseModel):
+    student_reg_number: str
+    student_roll_number: str
+    class_code: str
+    gender_code: str
+    serial: int
+    format_explanation: Dict[str, Any]
 
 # Permission Schemas
 class PermissionCreate(BaseModel):
@@ -98,39 +167,138 @@ class UserPermissionCreate(BaseModel):
 # Teacher Schemas
 class TeacherCreate(BaseModel):
     user_id: int
-    subjects: Optional[str] = None
     employee_id: Optional[str] = None
+    subjects: Optional[str] = None
+    specialization: Optional[str] = None
+    qualification: Optional[str] = None  # No longer required
+    additional_qualifications: Optional[str] = None
+    experience_years: Optional[int] = None  # No longer required
+    previous_experience: Optional[str] = None
     joining_date: Optional[datetime] = None
+    employment_type: Optional[str] = "full_time"
+    hourly_rate: Optional[float] = None  # Changed from salary to hourly_rate
+    emergency_contact: Optional[str] = None
+    emergency_contact_relation: Optional[str] = None
+    preferred_classes: Optional[str] = None
+    max_classes_per_day: Optional[int] = 6
+    preferred_time_slots: Optional[str] = None
+    bio: Optional[str] = None
+    achievements: Optional[str] = None
+    is_active: bool = True
+
+class TeacherUpdate(BaseModel):
+    employee_id: Optional[str] = None
+    subjects: Optional[str] = None
+    specialization: Optional[str] = None
     qualification: Optional[str] = None
+    additional_qualifications: Optional[str] = None
     experience_years: Optional[int] = None
+    previous_experience: Optional[str] = None
+    joining_date: Optional[datetime] = None
+    employment_type: Optional[str] = None
+    hourly_rate: Optional[float] = None  # Changed from salary to hourly_rate
+    emergency_contact: Optional[str] = None
+    emergency_contact_relation: Optional[str] = None
+    preferred_classes: Optional[str] = None
+    max_classes_per_day: Optional[int] = None
+    preferred_time_slots: Optional[str] = None
+    bio: Optional[str] = None
+    achievements: Optional[str] = None
+    is_active: Optional[bool] = None
 
 class TeacherRead(BaseModel):
     id: int
     user_id: int
-    subjects: Optional[str]
     employee_id: Optional[str]
-    joining_date: Optional[datetime]
+    subjects: Optional[str]
+    specialization: Optional[str]
     qualification: Optional[str]
+    additional_qualifications: Optional[str]
     experience_years: Optional[int]
+    previous_experience: Optional[str]
+    joining_date: Optional[datetime]
+    employment_type: Optional[str]
+    hourly_rate: Optional[float]  # Changed from salary to hourly_rate
+    emergency_contact: Optional[str]
+    emergency_contact_relation: Optional[str]
+    preferred_classes: Optional[str]
+    max_classes_per_day: Optional[int]
+    preferred_time_slots: Optional[str]
+    bio: Optional[str]
+    achievements: Optional[str]
+    is_active: bool
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+
+class TeacherWithUser(BaseModel):
+    """Teacher profile with user information"""
+    teacher: TeacherRead
+    user: UserRead
 
 # Batch Schemas
 class BatchCreate(BaseModel):
     name: str
+    code: Optional[str] = None
     course: Optional[str] = None
+    class_name: Optional[str] = None
+    version: Optional[StudentVersion] = StudentVersion.BV
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     max_students: Optional[int] = 30
+    min_students: Optional[int] = 5
+    schedule_days: Optional[str] = None  # JSON string
+    time_slot: Optional[str] = None
     fee_amount: Optional[float] = None
+    fee_period: Optional[str] = "monthly"
+    discount_percentage: Optional[float] = 0.0
+    status: Optional[str] = "active"
+    notes: Optional[str] = None
+
+class BatchUpdate(BaseModel):
+    name: Optional[str] = None
+    code: Optional[str] = None
+    course: Optional[str] = None
+    class_name: Optional[str] = None
+    version: Optional[StudentVersion] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    max_students: Optional[int] = None
+    min_students: Optional[int] = None
+    schedule_days: Optional[str] = None
+    time_slot: Optional[str] = None
+    fee_amount: Optional[float] = None
+    fee_period: Optional[str] = None
+    discount_percentage: Optional[float] = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
 
 class BatchRead(BaseModel):
     id: int
     name: str
+    code: Optional[str]
     course: Optional[str]
+    class_name: Optional[str]
+    version: Optional[StudentVersion]
     start_date: Optional[datetime]
     end_date: Optional[datetime]
     max_students: Optional[int]
+    min_students: Optional[int]
+    current_students_count: Optional[int]
+    schedule_days: Optional[str]
+    time_slot: Optional[str]
     fee_amount: Optional[float]
+    fee_period: Optional[str]
+    discount_percentage: Optional[float]
+    status: Optional[str]
+    notes: Optional[str]
+    created_by: Optional[int]
     created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+
+class BatchWithStats(BaseModel):
+    """Batch with additional statistics"""
+    batch: BatchRead
+    stats: Dict[str, Any]  # Can include enrollment stats, attendance rates, etc.
 
 # Class Assignment Schemas
 class ClassAssignmentCreate(BaseModel):

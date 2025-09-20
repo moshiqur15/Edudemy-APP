@@ -24,6 +24,7 @@ import Students from "./pages/Students";
 import Teachers from "./pages/Teachers";
 import Batches from "./pages/Batches";
 import MyClasses from "./pages/MyClasses";
+import PermissionsManagement from "./pages/PermissionsManagement";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
@@ -64,6 +65,7 @@ export default function App() {
         <Route path="/admin/students" element={<Layout><Students /></Layout>} />
         <Route path="/admin/teachers" element={<Layout><Teachers /></Layout>} />
         <Route path="/admin/batches" element={<Layout><Batches /></Layout>} />
+        <Route path="/admin/permissions" element={<Layout><PermissionsManagement /></Layout>} />
       </Route>
 
       {/* Management Routes */}

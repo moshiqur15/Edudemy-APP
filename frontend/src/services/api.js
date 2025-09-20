@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://127.0.0.1:8000';
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -96,6 +96,7 @@ export const usersAPI = {
 
 // Students API
 export const studentsAPI = {
+  // Enhanced student management
   getStudents: async (params = {}) => {
     const response = await api.get('/students/', { params });
     return response.data;
@@ -113,6 +114,124 @@ export const studentsAPI = {
 
   deleteStudent: async (studentId) => {
     const response = await api.delete(`/students/${studentId}`);
+    return response.data;
+  },
+
+  // ID Generation
+  previewStudentID: async (gender, className, admissionDate = null) => {
+    const response = await api.post('/students/preview-id', {
+      gender,
+      class_name: className,
+      admission_date: admissionDate
+    });
+    return response.data;
+  },
+
+  // Filtering endpoints
+  getStudentsByBatch: async (batchId) => {
+    const response = await api.get(`/students/by-batch/${batchId}`);
+    return response.data;
+  },
+
+  getStudentsByClass: async (className, version = null) => {
+    const params = version ? { version } : {};
+    const response = await api.get(`/students/by-class/${className}`, { params });
+    return response.data;
+  },
+
+  // Bulk operations
+  bulkAssignBatch: async (studentIds, batchId) => {
+    const response = await api.post('/students/bulk-assign-batch', {
+      student_ids: studentIds,
+      batch_id: batchId
+    });
+    return response.data;
+  },
+
+  unassignFromBatch: async (studentId, batchId) => {
+    const response = await api.put(`/students/${studentId}/unassign-batch`, {
+      batch_id: batchId
+    });
+    return response.data;
+  },
+};
+
+// Teachers API
+export const teachersAPI = {
+  // Teacher management
+  getTeachers: async (params = {}) => {
+    const response = await api.get('/teachers/', { params });
+    return response.data;
+  },
+
+  createTeacher: async (teacherData) => {
+    const response = await api.post('/teachers/', teacherData);
+    return response.data;
+  },
+
+  createTeacherWithUser: async (teacherData) => {
+    const response = await api.post('/teachers/with-user', teacherData);
+    return response.data;
+  },
+
+  getTeacher: async (teacherId) => {
+    const response = await api.get(`/teachers/${teacherId}`);
+    return response.data;
+  },
+
+  updateTeacher: async (teacherId, teacherData) => {
+    const response = await api.put(`/teachers/${teacherId}`, teacherData);
+    return response.data;
+  },
+
+  deleteTeacher: async (teacherId) => {
+    const response = await api.delete(`/teachers/${teacherId}`);
+    return response.data;
+  },
+
+  // Teacher assignments
+  getTeacherAssignments: async (teacherId, params = {}) => {
+    const response = await api.get(`/teachers/${teacherId}/assignments`, { params });
+    return response.data;
+  },
+
+  assignTeacherToClass: async (teacherId, assignmentData) => {
+    const response = await api.post(`/teachers/${teacherId}/assignments`, assignmentData);
+    return response.data;
+  },
+
+  getTeacherStudents: async (teacherId) => {
+    const response = await api.get(`/teachers/${teacherId}/students`);
+    return response.data;
+  },
+
+  getTeacherWorkload: async (teacherId, params = {}) => {
+    const response = await api.get(`/teachers/${teacherId}/workload`, { params });
+    return response.data;
+  },
+
+  // Subject-based operations
+  getTeachersBySubject: async (subject) => {
+    const response = await api.get(`/teachers/by-subject/${subject}`);
+    return response.data;
+  },
+
+  bulkAssignSubject: async (teacherIds, subject) => {
+    const response = await api.post('/teachers/bulk-assign-subject', {
+      teacher_ids: teacherIds,
+      subject
+    });
+    return response.data;
+  },
+
+  // Current teacher profile
+  getMyProfile: async () => {
+    const response = await api.get('/teachers/my-profile');
+    return response.data;
+  },
+
+  updateMyProfile: async (profileData) => {
+    const response = await api.put('/teachers/my-profile', profileData);
     return response.data;
   },
 };
@@ -135,9 +254,9 @@ export const dashboardAPI = {
   },
 };
 
-// Academics API
+// Enhanced Academics API
 export const academicsAPI = {
-  // Batches
+  // Enhanced Batch Management
   getBatches: async (params = {}) => {
     const response = await api.get('/academics/batches/', { params });
     return response.data;
@@ -145,6 +264,21 @@ export const academicsAPI = {
 
   createBatch: async (batchData) => {
     const response = await api.post('/academics/batches/', batchData);
+    return response.data;
+  },
+
+  getBatch: async (batchId) => {
+    const response = await api.get(`/academics/batches/${batchId}`);
+    return response.data;
+  },
+
+  updateBatch: async (batchId, batchData) => {
+    const response = await api.put(`/academics/batches/${batchId}`, batchData);
+    return response.data;
+  },
+
+  deleteBatch: async (batchId) => {
+    const response = await api.delete(`/academics/batches/${batchId}`);
     return response.data;
   },
 

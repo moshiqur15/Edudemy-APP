@@ -102,31 +102,89 @@ class UserPermission(SQLModel, table=True):
 class Teacher(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(default=None, foreign_key='user.id')
+    
+    # Professional Information
+    employee_id: Optional[str] = Field(default=None, unique=True)
     subjects: Optional[str] = None  # comma separated for MVP
-    employee_id: Optional[str] = None
-    joining_date: Optional[datetime] = None
+    specialization: Optional[str] = None  # Main area of expertise
     qualification: Optional[str] = None
+    additional_qualifications: Optional[str] = None  # JSON string for multiple qualifications
     experience_years: Optional[int] = None
-    user: Optional[User] = Relationship(back_populates='teacher')
+    previous_experience: Optional[str] = None  # Previous work experience
+    
+    # Employment Details
+    joining_date: Optional[datetime] = None
+    employment_type: Optional[str] = "full_time"  # full_time, part_time, contract
+    hourly_rate: Optional[float] = None  # Hourly rate for teachers
+    emergency_contact: Optional[str] = None
+    emergency_contact_relation: Optional[str] = None
+    
+    # Teaching Preferences
+    preferred_classes: Optional[str] = None  # JSON string of preferred class levels
+    max_classes_per_day: Optional[int] = 6
+    preferred_time_slots: Optional[str] = None  # JSON string of time preferences
+    
+    # Additional Information
+    bio: Optional[str] = None  # Teacher biography/description
+    achievements: Optional[str] = None  # Notable achievements
+    is_active: bool = True
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
     
     # Relationships
+    user: Optional[User] = Relationship(back_populates='teacher')
     class_assignments: List['ClassAssignment'] = Relationship(back_populates='teacher')
     exam_results: List['ExamResult'] = Relationship(back_populates='teacher')
     attendance_records: List['Attendance'] = Relationship(back_populates='teacher')
 
+# Student Version Enum
+class StudentVersion(str, Enum):
+    BV = "BV"  # Bangla Version
+    EV = "EV"  # English Version
+
+# Gender Enum
+class Gender(str, Enum):
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+
 class Student(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(default=None, foreign_key='user.id')
+    
+    # Basic Information
     full_name: str
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    batch_id: Optional[int] = Field(default=None, foreign_key='batch.id')
-    student_id: Optional[str] = None  # Roll number or student ID
+    father_name: str
+    mother_name: str
+    gender: Gender
     date_of_birth: Optional[datetime] = None
     address: Optional[str] = None
-    parent_name: Optional[str] = None
-    parent_phone: Optional[str] = None
-    admission_date: Optional[datetime] = None
+    
+    # Academic Information
+    class_name: str  # e.g., "Class 10", "HSC", "SSC"
+    batch_id: Optional[int] = Field(default=None, foreign_key='batch.id')
+    version: StudentVersion = StudentVersion.BV
+    current_school: Optional[str] = None
+    
+    # Generated IDs
+    student_reg_number: Optional[str] = Field(default=None, unique=True)  # Auto-generated: YYYY-GG-VV-RRRR
+    student_roll_number: Optional[str] = Field(default=None, unique=True)  # Auto-generated based on admission serial
+    
+    # Contact Information (JSON structure)
+    student_contact: Optional[str] = None  # Student's own contact
+    father_contact: Optional[str] = None   # Father's contact
+    mother_contact: Optional[str] = None   # Mother's contact
+    
+    # Legacy fields (keeping for compatibility)
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    student_id: Optional[str] = None  # Deprecated, use student_reg_number
+    parent_name: Optional[str] = None  # Deprecated, use father_name/mother_name
+    parent_phone: Optional[str] = None  # Deprecated, use father_contact/mother_contact
+    
+    # Admission Information
+    admission_date: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    admission_serial: Optional[int] = None  # Used for roll number generation
     
     # Relationships
     user: Optional[User] = Relationship(back_populates='student')
@@ -139,14 +197,38 @@ class Student(SQLModel, table=True):
 
 class Batch(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
-    course: Optional[str] = None
+    name: str  # Batch name (e.g., "Morning Batch A")
+    code: Optional[str] = None  # Unique batch code (e.g., "MB-2025-01")
+    course: Optional[str] = None  # Course name or subject focus
+    class_name: Optional[str] = None  # Class level (e.g., "Class 10", "HSC")
+    version: Optional[StudentVersion] = StudentVersion.BV  # BV or EV
+    
+    # Dates
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
+    
+    # Capacity
     max_students: Optional[int] = 30
+    min_students: Optional[int] = 5
+    current_students_count: Optional[int] = 0  # To be updated on student assignment
+    
+    # Schedule Info
+    schedule_days: Optional[str] = None  # JSON string of weekdays (e.g., ["Mon", "Wed", "Fri"])
+    time_slot: Optional[str] = None  # e.g., "08:00-10:00"
+    
+    # Financial Info
     fee_amount: Optional[float] = None
+    fee_period: Optional[str] = "monthly"  # monthly, quarterly, yearly, one-time
+    discount_percentage: Optional[float] = 0.0
+    
+    # Status
+    status: Optional[str] = "active"  # active, completed, cancelled, upcoming
+    notes: Optional[str] = None  # Additional notes about the batch
+    
+    # Metadata
     created_by: Optional[int] = Field(default=None, foreign_key='user.id')
     created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
     
     # Relationships
     students: List[Student] = Relationship(back_populates='batch')
