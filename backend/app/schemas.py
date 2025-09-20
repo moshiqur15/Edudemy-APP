@@ -47,7 +47,7 @@ class UserRead(BaseModel):
     updated_at: Optional[datetime]
 
 class LoginRequest(BaseModel):
-    username: str
+    username: str  # Can be either username or email
     password: str
 
 class StudentCreate(BaseModel):

@@ -78,26 +78,39 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    console.log('Form submitted with data:', formData);
+    
+    if (!validateForm()) {
+      console.log('Form validation failed');
+      return;
+    }
     
     setLoading(true);
     setError('');
+    console.log('Starting registration request...');
     
     try {
-      const response = await authAPI.registerRequest({
+      const requestData = {
         full_name: formData.full_name,
         email: formData.email,
         password: formData.password,
         requested_role: formData.requested_role
-      });
+      };
+      console.log('Sending request data:', requestData);
+      
+      const response = await authAPI.registerRequest(requestData);
+      console.log('Registration successful:', response);
       
       setRegistrationToken(response.registration_token);
       setStep(2);
     } catch (error) {
       console.error('Registration error:', error);
-      setError(error.response?.data?.detail || 'Registration failed. Please try again.');
+      console.error('Error response:', error.response);
+      console.error('Error data:', error.response?.data);
+      setError(error.response?.data?.detail || error.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
+      console.log('Registration request completed');
     }
   };
 

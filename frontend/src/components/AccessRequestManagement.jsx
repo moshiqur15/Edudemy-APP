@@ -78,11 +78,11 @@ export default function AccessRequestManagement() {
   };
 
   const canManageRequest = (requestedRole) => {
-    const currentUserLevel = roleHierarchy[user.role] || 0;
-    const requestedLevel = roleHierarchy[requestedRole] || 0;
-    
     // Superadmin can manage everything
     if (user.role === 'superadmin') return true;
+    
+    const currentUserLevel = roleHierarchy[user.role] || 0;
+    const requestedLevel = roleHierarchy[requestedRole] || 0;
     
     // Users can only manage requests for roles below their level
     return currentUserLevel > requestedLevel;
@@ -92,11 +92,20 @@ export default function AccessRequestManagement() {
     try {
       setLoading(true);
       setError('');
+      console.log('Loading access requests for user:', user.role);
       const response = await accessRequestAPI.getAccessRequests();
+      console.log('Received access requests:', response);
       
-      // Filter requests based on hierarchy permissions
-      const filteredRequests = response.filter(request => canManageRequest(request.requested_role));
-      setRequests(filteredRequests);
+      // Superadmin can see all requests, others are filtered by hierarchy
+      if (user.role === 'superadmin') {
+        console.log('User is superadmin, showing all requests:', response.length);
+        setRequests(response);
+      } else {
+        // Filter requests based on hierarchy permissions
+        const filteredRequests = response.filter(request => canManageRequest(request.requested_role));
+        console.log('Filtered requests for', user.role, ':', filteredRequests.length);
+        setRequests(filteredRequests);
+      }
     } catch (error) {
       console.error('Error loading access requests:', error);
       setError('Failed to load access requests. Please try again.');
@@ -308,9 +317,20 @@ export default function AccessRequestManagement() {
                         <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
                           {request.full_name?.charAt(0).toUpperCase() || 'U'}
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {request.full_name}
+                        <div className="ml-4 flex-1">
+                          <div className="flex items-center">
+                            <div className="text-sm font-medium text-gray-900">
+                              {request.full_name}
+                            </div>
+                            {/* Email request counter */}
+                            {(() => {
+                              const emailCount = requests.filter(r => r.email === request.email).length;
+                              return emailCount > 1 ? (
+                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                  {emailCount} requests
+                                </span>
+                              ) : null;
+                            })()}
                           </div>
                           <div className="text-sm text-gray-500 flex items-center">
                             <Mail className="w-3 h-3 mr-1" />

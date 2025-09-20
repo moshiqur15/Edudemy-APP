@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Debug</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Registration Debug Test</h1>
+    <form id="testForm">
+        <div>
+            <label>Full Name: <input type="text" id="fullName" value="Test User" required></label>
+        </div>
+        <div>
+            <label>Email: <input type="email" id="email" value="test@example.com" required></label>
+        </div>
+        <div>
+            <label>Password: <input type="password" id="password" value="testpass123" required></label>
+        </div>
+        <div>
+            <label>Role: 
+                <select id="role">
+                    <option value="student">Student</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </label>
+        </div>
+        <button type="submit">Test Registration</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                full_name: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                requested_role: document.getElementById('role').value
+            };
+            
+            console.log('Sending request with data:', formData);
+            document.getElementById('result').innerHTML = 'Sending request...';
+            
+            try {
+                const response = await axios.post('http://127.0.0.1:8000/auth/register-request', formData, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('Success response:', response.data);
+                document.getElementById('result').innerHTML = `
+                    <h3>Success!</h3>
+                    <p>Status: ${response.status}</p>
+                    <p>Message: ${response.data.message}</p>
+                    <p>Token: ${response.data.registration_token}</p>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = `
+                    <h3>Error!</h3>
+                    <p>Status: ${error.response?.status || 'Network Error'}</p>
+                    <p>Message: ${error.response?.data?.detail || error.message}</p>
+                    <pre>${JSON.stringify(error.response?.data || error, null, 2)}</pre>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

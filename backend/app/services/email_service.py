@@ -418,5 +418,18 @@ class EmailService:
             logger.error(f"Failed to send email to {to_email}: {str(e)}")
             return False
 
+# Initialize with configuration
+def get_email_service():
+    """Get configured email service instance"""
+    from ..config import settings
+    return EmailService(
+        smtp_server=settings.SMTP_SERVER or None,
+        smtp_port=settings.SMTP_PORT,
+        smtp_username=settings.SMTP_USERNAME or None,
+        smtp_password=settings.SMTP_PASSWORD or None,
+        from_email=settings.FROM_EMAIL or None,
+        from_name=settings.FROM_NAME
+    )
+
 # Global email service instance
-email_service = EmailService()
+email_service = get_email_service()
