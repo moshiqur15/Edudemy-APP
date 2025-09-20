@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
 import BatchForm from '../components/forms/BatchForm';
 import BatchStudentAssignment from '../components/batch/BatchStudentAssignment';
 import { academicsAPI } from '../services/api';
@@ -191,14 +190,9 @@ export default function Batches() {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Batch Management</h2>
-            <p className="text-gray-600">Create and manage student batches and classes</p>
-          </div>
+    <div className="space-y-6">
+        {/* Action Bar */}
+        <div className="flex justify-end">
           <button
             onClick={handleAddBatch}
             className="btn-primary inline-flex items-center px-4 py-2"
@@ -458,6 +452,5 @@ export default function Batches() {
           />
         )}
       </div>
-    </Layout>
   );
 }

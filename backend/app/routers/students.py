@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select, or_
 from typing import List, Optional
 from datetime import datetime
+from pydantic import BaseModel
 from ..database import get_session
 from ..models import Student, Gender, StudentVersion, Batch, User
 from ..schemas import StudentCreate, StudentRead, StudentUpdate, StudentIDPreview
@@ -37,40 +38,44 @@ def create_student(
     current_user: User = Depends(require_role('superadmin', 'admin', 'management', 'academics'))
 ):
     """Create a new student with auto-generated IDs"""
-    
-    # Generate student IDs
-    id_data = StudentIDGenerator.validate_and_generate_ids(
-        session=session,
-        gender=payload.gender,
-        class_name=payload.class_name,
-        admission_date=payload.admission_date
-    )
-    
-    # Create student with generated data
-    student_data = payload.model_dump()
-    student_data.update(id_data)
-    
-    # Set legacy fields for backward compatibility
-    if payload.father_contact and not payload.phone:
-        student_data['phone'] = payload.father_contact
-    if not payload.parent_name:
-        student_data['parent_name'] = payload.father_name
-    if not payload.parent_phone:
-        student_data['parent_phone'] = payload.father_contact
-    
-    student = Student(**student_data)
-    session.add(student)
-    session.commit()
-    session.refresh(student)
-    
-    # Update batch student count if assigned to batch
-    if student.batch_id:
-        batch = session.get(Batch, student.batch_id)
-        if batch:
-            batch.current_students_count = (batch.current_students_count or 0) + 1
-            session.commit()
-    
-    return student
+    try:
+        # Generate student IDs
+        id_data = StudentIDGenerator.validate_and_generate_ids(
+            session=session,
+            gender=payload.gender,
+            class_name=payload.class_name,
+            admission_date=payload.admission_date
+        )
+        
+        # Create student with generated data
+        student_data = payload.model_dump()
+        student_data.update(id_data)
+        
+        # Set legacy fields for backward compatibility
+        if payload.father_contact and not payload.phone:
+            student_data['phone'] = payload.father_contact
+        if not student_data.get('parent_name'):
+            student_data['parent_name'] = payload.father_name
+        if not student_data.get('parent_phone'):
+            student_data['parent_phone'] = payload.father_contact
+        
+        student = Student(**student_data)
+        session.add(student)
+        session.commit()
+        session.refresh(student)
+        
+        # Update batch student count if assigned to batch
+        if student.batch_id:
+            batch = session.get(Batch, student.batch_id)
+            if batch:
+                batch.current_students_count = (batch.current_students_count or 0) + 1
+                session.commit()
+        
+        return student
+        
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Error creating student: {str(e)}")
 
 @router.get('/', response_model=List[StudentRead])
 def list_students(
@@ -204,7 +209,7 @@ def delete_student(
 def get_students_by_batch(
     batch_id: int,
     session: Session = Depends(get_session),
-    _=Depends(require_role('admin', 'teacher', 'academics'))
+    _=Depends(require_role('superadmin', 'admin', 'teacher', 'academics'))
 ):
     """Get all students in a specific batch"""
     students = session.exec(
@@ -231,22 +236,25 @@ def get_students_by_class(
     ).all()
     return students
 
+class BulkAssignBatchRequest(BaseModel):
+    student_ids: List[int]
+    batch_id: int
+
 @router.post('/bulk-assign-batch')
 def bulk_assign_batch(
-    student_ids: List[int],
-    batch_id: int,
+    request: BulkAssignBatchRequest,
     session: Session = Depends(get_session),
-    _=Depends(require_role('admin', 'academics'))
+    _=Depends(require_role('superadmin', 'admin', 'academics'))
 ):
     """Assign multiple students to a batch"""
     # Verify batch exists
-    batch = session.get(Batch, batch_id)
+    batch = session.get(Batch, request.batch_id)
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
     
     updated_count = 0
     
-    for student_id in student_ids:
+    for student_id in request.student_ids:
         student = session.get(Student, student_id)
         if student:
             # Update old batch count
@@ -256,7 +264,7 @@ def bulk_assign_batch(
                     old_batch.current_students_count -= 1
             
             # Assign to new batch
-            student.batch_id = batch_id
+            student.batch_id = request.batch_id
             updated_count += 1
     
     # Update new batch count
@@ -268,3 +276,34 @@ def bulk_assign_batch(
         "message": f"Successfully assigned {updated_count} students to batch {batch.name}",
         "updated_count": updated_count
     }
+
+class UnassignBatchRequest(BaseModel):
+    batch_id: int
+
+@router.put('/{student_id}/unassign-batch')
+def unassign_from_batch(
+    student_id: int,
+    request: UnassignBatchRequest,
+    session: Session = Depends(get_session),
+    _=Depends(require_role('superadmin', 'admin', 'academics'))
+):
+    """Unassign student from a batch"""
+    student = session.get(Student, student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    # Verify student is in the specified batch
+    if student.batch_id != request.batch_id:
+        raise HTTPException(status_code=400, detail="Student is not in the specified batch")
+    
+    # Update old batch count
+    if student.batch_id:
+        batch = session.get(Batch, student.batch_id)
+        if batch and batch.current_students_count > 0:
+            batch.current_students_count -= 1
+    
+    # Remove from batch
+    student.batch_id = None
+    session.commit()
+    
+    return {"message": "Student unassigned from batch successfully"}

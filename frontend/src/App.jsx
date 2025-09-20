@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
@@ -25,6 +26,10 @@ import Teachers from "./pages/Teachers";
 import Batches from "./pages/Batches";
 import MyClasses from "./pages/MyClasses";
 import PermissionsManagement from "./pages/PermissionsManagement";
+import Permissions from "./pages/Permissions";
+import Analytics from "./pages/Analytics";
+import Attendance from "./pages/Attendance";
+import GradeBook from "./pages/GradeBook";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
@@ -54,6 +59,7 @@ export default function App() {
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
       <Route
         path="/"
         element={<Navigate to={getDefaultRoute()} replace />}
@@ -65,24 +71,34 @@ export default function App() {
         <Route path="/admin/students" element={<Layout><Students /></Layout>} />
         <Route path="/admin/teachers" element={<Layout><Teachers /></Layout>} />
         <Route path="/admin/batches" element={<Layout><Batches /></Layout>} />
-        <Route path="/admin/permissions" element={<Layout><PermissionsManagement /></Layout>} />
+        <Route path="/admin/analytics" element={<Layout><Analytics /></Layout>} />
+        <Route path="/admin/attendance" element={<Layout><Attendance /></Layout>} />
+        <Route path="/admin/permissions" element={<Layout><Permissions /></Layout>} />
       </Route>
 
       {/* Management Routes */}
       <Route element={<ProtectedRoute requireRole={["superadmin", "admin", "management"]} />}>
         <Route path="/management" element={<Layout><DashboardManagement /></Layout>} />
+        <Route path="/management/analytics" element={<Layout><Analytics /></Layout>} />
+        <Route path="/management/attendance" element={<Layout><Attendance /></Layout>} />
+        <Route path="/management/gradebook" element={<Layout><GradeBook /></Layout>} />
       </Route>
 
       {/* Academics Routes */}
       <Route element={<ProtectedRoute requireRole={["superadmin", "admin", "academics"]} />}>
         <Route path="/academics" element={<Layout><DashboardAcademics /></Layout>} />
         <Route path="/academics/batches" element={<Layout><Batches /></Layout>} />
+        <Route path="/academics/analytics" element={<Layout><Analytics /></Layout>} />
+        <Route path="/academics/attendance" element={<Layout><Attendance /></Layout>} />
+        <Route path="/academics/gradebook" element={<Layout><GradeBook /></Layout>} />
       </Route>
 
       {/* Teacher Routes */}
       <Route element={<ProtectedRoute requireRole="teacher" />}>
         <Route path="/teacher" element={<Layout><DashboardTeacher /></Layout>} />
         <Route path="/teacher/classes" element={<Layout><MyClasses /></Layout>} />
+        <Route path="/teacher/attendance" element={<Layout><Attendance /></Layout>} />
+        <Route path="/teacher/gradebook" element={<Layout><GradeBook /></Layout>} />
       </Route>
 
       {/* Student Routes */}

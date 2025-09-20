@@ -54,6 +54,22 @@ export const authAPI = {
     const response = await api.post('/auth/register', userData);
     return response.data;
   },
+
+  // New registration system with email verification
+  registerRequest: async (userData) => {
+    const response = await api.post('/auth/register-request', userData);
+    return response.data;
+  },
+
+  verifyRegistration: async (verificationData) => {
+    const response = await api.post('/auth/verify-registration', verificationData);
+    return response.data;
+  },
+
+  resendVerificationCode: async (tokenData) => {
+    const response = await api.post('/auth/resend-verification', tokenData);
+    return response.data;
+  },
 };
 
 // Users API
@@ -647,6 +663,29 @@ export const permissionsAPI = {
 
   getMyPermissions: async () => {
     const response = await api.get('/permissions/my-permissions');
+    return response.data;
+  },
+};
+
+// Access Request API
+export const accessRequestAPI = {
+  getAccessRequests: async (params = {}) => {
+    const response = await api.get('/auth/access-requests', { params });
+    return response.data;
+  },
+
+  approveRequest: async (requestId, data = {}) => {
+    const response = await api.post(`/auth/access-requests/${requestId}/approve`, data);
+    return response.data;
+  },
+
+  rejectRequest: async (requestId, data) => {
+    const response = await api.post(`/auth/access-requests/${requestId}/reject`, data);
+    return response.data;
+  },
+
+  getRequestDetails: async (requestId) => {
+    const response = await api.get(`/auth/access-requests/${requestId}`);
     return response.data;
   },
 };

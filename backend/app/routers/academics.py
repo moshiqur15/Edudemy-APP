@@ -96,6 +96,9 @@ def get_batches(
         # Create simplified response without complex stats
         result = []
         for batch in batches:
+            # Convert Batch model to BatchRead using from_orm approach
+            batch_read = BatchRead.from_orm(batch)
+            
             # Use minimal stats to avoid field access issues
             stats = {
                 "enrollment_rate": 0,
@@ -103,14 +106,16 @@ def get_batches(
                 "total_classes": 0,
                 "active_assignments": 0
             }
-            result.append(BatchWithStats(batch=batch, stats=stats))
+            result.append(BatchWithStats(batch=batch_read, stats=stats))
         
         return result
         
     except Exception as e:
-        # Return empty list if there are still database issues
+        # Log the error and re-raise it instead of returning empty list
         print(f"Batches query error: {str(e)}")
-        return []
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error fetching batches: {str(e)}")
 
 @router.get("/batches/{batch_id}", response_model=BatchWithStats)
 def get_batch(

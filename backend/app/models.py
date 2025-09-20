@@ -449,3 +449,42 @@ class ReportCard(SQLModel, table=True):
     # Additional data stored as JSON
     subject_grades: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
     behavior_summary: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
+
+# Access Request System
+class AccessRequestStatus(str, Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+class AccessRequest(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    
+    # User Information
+    full_name: str
+    email: str
+    username: Optional[str] = None  # Generated after approval
+    hashed_password: str  # Stored securely
+    requested_role: UserRole
+    
+    # Request Status
+    status: AccessRequestStatus = AccessRequestStatus.PENDING
+    reason: Optional[str] = None  # User's reason for requesting access
+    admin_reason: Optional[str] = None  # Admin's reason for approval/rejection
+    
+    # Email Verification
+    email_verified: bool = False
+    verification_code: Optional[str] = None
+    verification_expires_at: Optional[datetime] = None
+    registration_token: Optional[str] = None  # Temporary token for verification
+    
+    # Review Information
+    reviewed_by: Optional[int] = Field(default=None, foreign_key='user.id')
+    reviewed_at: Optional[datetime] = None
+    
+    # Metadata
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    
+    # IP and Security
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None

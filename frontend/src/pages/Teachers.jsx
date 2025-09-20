@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
 import TeacherForm from '../components/forms/TeacherForm';
 import { teachersAPI } from '../services/api';
 import { 
@@ -148,22 +147,17 @@ export default function Teachers() {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Teacher Management</h2>
-            <p className="text-gray-600">Manage teacher profiles and assignments</p>
-          </div>
-          <button
-            onClick={handleAddTeacher}
-            className="btn-primary inline-flex items-center px-4 py-2"
-          >
-            <Plus size={20} className="mr-2" />
-            Add New Teacher
-          </button>
-        </div>
+    <div className="space-y-6">
+      {/* Action Bar */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleAddTeacher}
+          className="btn-primary inline-flex items-center px-4 py-2"
+        >
+          <Plus size={20} className="mr-2" />
+          Add New Teacher
+        </button>
+      </div>
         
         {/* Error Display */}
         {error && (
@@ -364,6 +358,5 @@ export default function Teachers() {
           />
         )}
       </div>
-    </Layout>
   );
 }

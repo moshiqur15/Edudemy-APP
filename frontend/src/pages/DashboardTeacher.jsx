@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
 import StatCard from '../components/StatCard';
 import { 
   Users, 
@@ -156,8 +155,7 @@ export default function DashboardTeacher() {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-green-600 to-emerald-700 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
@@ -366,6 +364,5 @@ export default function DashboardTeacher() {
           </div>
         </div>
       </div>
-    </Layout>
   );
 }

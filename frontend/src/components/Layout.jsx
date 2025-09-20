@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { notificationsAPI } from '../services/api';
+import MessagingWidget from './MessagingWidget';
 import { 
   Menu, 
   X, 
@@ -90,8 +91,6 @@ export default function Layout({ children }) {
 
   const getNavItems = () => {
     const baseItems = [
-      { path: '/messaging', icon: MessageCircle, label: 'Messages', color: 'text-blue-600' },
-      { path: '/notifications', icon: Bell, label: 'Notifications', color: 'text-yellow-600' },
       { path: '/profile', icon: User, label: 'Profile', color: 'text-green-600' },
     ];
 
@@ -103,6 +102,7 @@ export default function Layout({ children }) {
         { path: '/admin/teachers', icon: UserCheck, label: 'Teachers', color: 'text-purple-600' },
         { path: '/admin/batches', icon: BookOpen, label: 'Batches', color: 'text-orange-600' },
         { path: '/admin/analytics', icon: BarChart3, label: 'Analytics', color: 'text-indigo-600' },
+        { path: '/admin/attendance', icon: CheckCircle, label: 'Attendance', color: 'text-blue-500' },
         { path: '/admin/feedback', icon: Star, label: 'Feedback', color: 'text-pink-600' },
         { path: '/admin/permissions', icon: Shield, label: 'Permissions', color: 'text-red-500' },
         { path: '/admin/settings', icon: Settings, label: 'Settings', color: 'text-gray-600' },
@@ -113,8 +113,11 @@ export default function Layout({ children }) {
     if (hasRole('management')) {
       return [
         { path: '/management', icon: Home, label: 'Dashboard', color: 'text-blue-600' },
+        { path: '/management/analytics', icon: BarChart3, label: 'Analytics', color: 'text-indigo-600' },
+        { path: '/management/attendance', icon: CheckCircle, label: 'Attendance', color: 'text-blue-500' },
+        { path: '/management/gradebook', icon: Book, label: 'Grade Book', color: 'text-purple-600' },
         { path: '/management/tasks', icon: ClipboardList, label: 'Task Management', color: 'text-green-600' },
-        { path: '/management/reports', icon: FileText, label: 'Reports', color: 'text-indigo-600' },
+        { path: '/management/reports', icon: FileText, label: 'Reports', color: 'text-purple-600' },
         { path: '/management/feedback', icon: Star, label: 'Feedback', color: 'text-pink-600' },
         ...baseItems
       ];
@@ -123,10 +126,12 @@ export default function Layout({ children }) {
     if (hasRole('academics')) {
       return [
         { path: '/academics', icon: Home, label: 'Dashboard', color: 'text-blue-600' },
+        { path: '/academics/analytics', icon: BarChart3, label: 'Analytics', color: 'text-indigo-600' },
+        { path: '/academics/attendance', icon: CheckCircle, label: 'Attendance', color: 'text-blue-500' },
+        { path: '/academics/gradebook', icon: Book, label: 'Grade Book', color: 'text-purple-600' },
         { path: '/academics/classes', icon: Calendar, label: 'Class Management', color: 'text-green-600' },
         { path: '/academics/exams', icon: Award, label: 'Exam Management', color: 'text-purple-600' },
-        { path: '/academics/attendance', icon: CheckCircle, label: 'Attendance', color: 'text-blue-500' },
-        { path: '/academics/reports', icon: FileText, label: 'Report Cards', color: 'text-indigo-600' },
+        { path: '/academics/reports', icon: FileText, label: 'Report Cards', color: 'text-purple-600' },
         { path: '/academics/behavior', icon: Target, label: 'Behavior Records', color: 'text-orange-600' },
         { path: '/academics/batches', icon: BookOpen, label: 'Batches', color: 'text-teal-600' },
         ...baseItems
@@ -239,11 +244,6 @@ export default function Layout({ children }) {
               >
                 <item.icon size={20} className={`mr-3 ${isActive(item.path) ? 'text-blue-600' : item.color}`} />
                 {item.label}
-                {item.path === '/messaging' && unreadCount > 0 && (
-                  <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
               </Link>
             ))}
           </nav>
@@ -280,19 +280,6 @@ export default function Layout({ children }) {
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Messages */}
-              <button 
-                onClick={() => navigate('/messaging')}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 relative"
-              >
-                <MessageCircle size={20} />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
-              </button>
-              
               {/* Notifications */}
               <div className="relative">
                 <button 
@@ -401,6 +388,9 @@ export default function Layout({ children }) {
           </div>
         </main>
       </div>
+      
+      {/* Messaging Widget */}
+      <MessagingWidget />
     </div>
   );
 }

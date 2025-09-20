@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
 import { 
   Users, 
   BookOpen,
@@ -126,13 +125,7 @@ export default function MyClasses() {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">My Classes</h2>
-          <p className="text-gray-600">Manage your assigned classes and track student progress</p>
-        </div>
+    <div className="space-y-6">
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -431,6 +424,5 @@ export default function MyClasses() {
           </div>
         )}
       </div>
-    </Layout>
   );
 }

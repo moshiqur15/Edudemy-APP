@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Navigate } from 'react-router-dom';
 import { Book, Users, GraduationCap, Lock, User } from 'lucide-react';
 
 export default function Login() {
@@ -186,6 +186,16 @@ export default function Login() {
                 )}
               </button>
             </form>
+            
+            {/* Registration Link */}
+            <div className="text-center mt-6">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{' '}
+                <Link to="/register" className="text-blue-600 hover:text-blue-800 font-medium">
+                  Request Access
+                </Link>
+              </p>
+            </div>
             
             {/* Demo Credentials */}
             <div className="mt-8 pt-6 border-t border-gray-200">

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
 import { usersAPI, authAPI, adminAPI } from '../services/api';
 import { 
   Users, 
@@ -285,44 +284,34 @@ export default function PermissionsManagement() {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Shield className="mr-3" size={28} />
-              Permissions Management
-            </h2>
-            <p className="text-gray-600">Manage user roles and system permissions</p>
-          </div>
-          <div className="flex gap-3">
-            {selectedUsers.length > 0 && (
-              <>
-                <button
-                  onClick={handleBulkActivate}
-                  className="btn-primary px-4 py-2 text-sm"
-                >
-                  <Check size={16} className="mr-1" />
-                  Activate ({selectedUsers.length})
-                </button>
-                <button
-                  onClick={handleBulkDeactivate}
-                  className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
-                >
-                  <X size={16} className="mr-1" />
-                  Deactivate ({selectedUsers.length})
-                </button>
-              </>
-            )}
-            <button
-              onClick={() => setShowCreateUser(true)}
-              className="btn-primary inline-flex items-center px-4 py-2"
-            >
-              <UserPlus size={20} className="mr-2" />
-              Create User
-            </button>
-          </div>
+    <div className="space-y-6">
+        {/* Action Bar */}
+        <div className="flex justify-end gap-3">
+          {selectedUsers.length > 0 && (
+            <>
+              <button
+                onClick={handleBulkActivate}
+                className="btn-primary px-4 py-2 text-sm"
+              >
+                <Check size={16} className="mr-1" />
+                Activate ({selectedUsers.length})
+              </button>
+              <button
+                onClick={handleBulkDeactivate}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                <X size={16} className="mr-1" />
+                Deactivate ({selectedUsers.length})
+              </button>
+            </>
+          )}
+          <button
+            onClick={() => setShowCreateUser(true)}
+            className="btn-primary inline-flex items-center px-4 py-2"
+          >
+            <UserPlus size={20} className="mr-2" />
+            Create User
+          </button>
         </div>
 
         {/* Role Overview */}
@@ -506,7 +495,6 @@ export default function PermissionsManagement() {
           />
         )}
       </div>
-    </Layout>
   );
 }
 

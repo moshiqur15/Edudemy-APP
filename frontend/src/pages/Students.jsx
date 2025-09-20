@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
 import StudentForm from '../components/forms/StudentForm';
 import { studentsAPI } from '../services/api';
 import { 
@@ -17,7 +16,10 @@ import {
   BookOpen,
   GraduationCap,
   X,
-  Save
+  Save,
+  ChevronUp,
+  ChevronDown,
+  ArrowUpDown
 } from 'lucide-react';
 
 export default function Students() {
@@ -28,6 +30,9 @@ export default function Students() {
   const [showModal, setShowModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [error, setError] = useState(null);
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const loadStudents = async () => {
     try {
@@ -66,15 +71,78 @@ export default function Students() {
 
   const uniqueBatches = getUniqueBatches();
 
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = (student.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (student.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (student.student_reg_number || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesBatch = filterBatch === 'all' || 
-                        (student.batch?.name === filterBatch) ||
-                        (`Batch ${student.batch_id}` === filterBatch);
-    return matchesSearch && matchesBatch;
-  });
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+  };
+
+  const getSortIcon = (column) => {
+    if (sortBy !== column) {
+      return <ArrowUpDown size={14} className="text-gray-400" />;
+    }
+    return sortOrder === 'asc' ? 
+      <ChevronUp size={14} className="text-blue-600" /> : 
+      <ChevronDown size={14} className="text-blue-600" />;
+  };
+
+  const getStudentStatus = (student) => {
+    // You can enhance this logic based on your requirements
+    // For now, using a simple active/inactive logic
+    return student.is_active !== false ? 'active' : 'inactive';
+  };
+
+  const filteredAndSortedStudents = students
+    .filter(student => {
+      const matchesSearch = (student.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (student.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (student.student_reg_number || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesBatch = filterBatch === 'all' || 
+                          (student.batch?.name === filterBatch) ||
+                          (`Batch ${student.batch_id}` === filterBatch);
+      const matchesStatus = statusFilter === 'all' || getStudentStatus(student) === statusFilter;
+      return matchesSearch && matchesBatch && matchesStatus;
+    })
+    .sort((a, b) => {
+      let aVal, bVal;
+      
+      switch (sortBy) {
+        case 'name':
+          aVal = (a.full_name || '').toLowerCase();
+          bVal = (b.full_name || '').toLowerCase();
+          break;
+        case 'rollNumber':
+          aVal = a.student_reg_number || '';
+          bVal = b.student_reg_number || '';
+          break;
+        case 'batch':
+          aVal = (a.batch?.name || '').toLowerCase();
+          bVal = (b.batch?.name || '').toLowerCase();
+          break;
+        case 'status':
+          aVal = getStudentStatus(a);
+          bVal = getStudentStatus(b);
+          break;
+        case 'enrollment':
+          aVal = a.admission_date ? new Date(a.admission_date) : new Date(0);
+          bVal = b.admission_date ? new Date(b.admission_date) : new Date(0);
+          break;
+        default:
+          aVal = a.full_name || '';
+          bVal = b.full_name || '';
+      }
+      
+      if (sortBy === 'enrollment') {
+        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      
+      const comparison = aVal.localeCompare ? aVal.localeCompare(bVal) : 
+                        (aVal < bVal ? -1 : aVal > bVal ? 1 : 0);
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
 
   const handleAddStudent = () => {
     setEditingStudent(null);
@@ -123,14 +191,9 @@ export default function Students() {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Student Management</h2>
-            <p className="text-gray-600">Manage student profiles and enrollment information</p>
-          </div>
+    <div className="space-y-6">
+        {/* Action Bar */}
+        <div className="flex justify-end gap-4">
           <button
             onClick={handleAddStudent}
             className="btn-primary inline-flex items-center px-4 py-2"
@@ -155,11 +218,24 @@ export default function Students() {
               <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search students by name or email..."
+                placeholder="Search students by name, email, or roll number..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+            </div>
+
+            {/* Status Filter */}
+            <div className="sm:w-40">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
             </div>
 
             {/* Batch Filter */}
@@ -184,20 +260,50 @@ export default function Students() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('name')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>Student</span>
+                      {getSortIcon('name')}
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('rollNumber')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>Contact / Roll No.</span>
+                      {getSortIcon('rollNumber')}
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Batch
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('batch')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>Batch</span>
+                      {getSortIcon('batch')}
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Enrollment
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('enrollment')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>Enrollment</span>
+                      {getSortIcon('enrollment')}
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('status')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>Status</span>
+                      {getSortIcon('status')}
+                    </div>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -239,7 +345,7 @@ export default function Students() {
                     </tr>
                   ))
                 ) : (
-                  filteredStudents.map((student) => (
+                  filteredAndSortedStudents.map((student) => (
                     <tr key={student.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -258,7 +364,10 @@ export default function Students() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{student.email || 'N/A'}</div>
-                        <div className="text-sm text-gray-500">{student.phone || student.father_contact || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">
+                          Roll: {student.student_reg_number || 'N/A'} | 
+                          Ph: {student.phone || student.father_contact || 'N/A'}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{student.batch?.name || 'No Batch'}</div>
@@ -267,8 +376,12 @@ export default function Students() {
                         {student.admission_date ? new Date(student.admission_date).toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          Active
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          getStudentStatus(student) === 'active' 
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {getStudentStatus(student) === 'active' ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -294,7 +407,7 @@ export default function Students() {
             </table>
           </div>
 
-          {!loading && filteredStudents.length === 0 && (
+          {!loading && filteredAndSortedStudents.length === 0 && (
             <div className="text-center py-12">
               <Users size={48} className="mx-auto text-gray-400 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
@@ -342,6 +455,5 @@ export default function Students() {
           </div>
         )}
       </div>
-    </Layout>
   );
 }

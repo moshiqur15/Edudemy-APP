@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from .models import UserRole, NotificationType, MessageType, FeedbackType, BehaviorType, Gender, StudentVersion
+from .models import UserRole, NotificationType, MessageType, FeedbackType, BehaviorType, Gender, StudentVersion, AccessRequestStatus
 
 class Token(BaseModel):
     access_token: str
@@ -93,6 +93,8 @@ class StudentUpdate(BaseModel):
     email: Optional[str] = None
 
 class StudentRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     user_id: Optional[int]
     
@@ -273,6 +275,8 @@ class BatchUpdate(BaseModel):
     notes: Optional[str] = None
 
 class BatchRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     name: str
     code: Optional[str]
@@ -450,6 +454,44 @@ class ExamResultRead(BaseModel):
     grade: Optional[str]
     remarks: Optional[str]
     entered_at: Optional[datetime]
+
+# Access Request Schemas
+class AccessRequestCreate(BaseModel):
+    full_name: str
+    email: str
+    password: str
+    requested_role: UserRole
+    reason: Optional[str] = None
+
+class AccessRequestVerify(BaseModel):
+    registration_token: str
+    verification_code: str
+
+class AccessRequestResendCode(BaseModel):
+    registration_token: str
+
+class AccessRequestApprove(BaseModel):
+    reason: Optional[str] = "Access request approved by administrator."
+
+class AccessRequestReject(BaseModel):
+    reason: str
+
+class AccessRequestRead(BaseModel):
+    id: int
+    full_name: str
+    email: str
+    requested_role: UserRole
+    status: AccessRequestStatus
+    reason: Optional[str]
+    admin_reason: Optional[str]
+    email_verified: bool
+    reviewed_by: Optional[int]
+    reviewed_at: Optional[datetime]
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+    
+    # Additional fields for display
+    reviewed_by_name: Optional[str] = None
 
 class AttendanceCreate(BaseModel):
     student_id: int

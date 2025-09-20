@@ -24,6 +24,7 @@ const TeacherForm = ({ teacher = null, onSubmit, onCancel, mode = 'create' }) =>
     joining_date: new Date().toISOString().split('T')[0],
     employment_type: 'full_time',
     hourly_rate: '',
+    monthly_salary: '',
     
     // Emergency Contact
     emergency_contact: '',
@@ -43,6 +44,7 @@ const TeacherForm = ({ teacher = null, onSubmit, onCancel, mode = 'create' }) =>
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Predefined options
   const employmentTypes = [
@@ -89,6 +91,7 @@ const TeacherForm = ({ teacher = null, onSubmit, onCancel, mode = 'create' }) =>
         joining_date: teacherData.joining_date ? new Date(teacherData.joining_date).toISOString().split('T')[0] : '',
         employment_type: teacherData.employment_type || 'full_time',
         hourly_rate: teacherData.hourly_rate || '',
+        monthly_salary: teacherData.monthly_salary || '',
         emergency_contact: teacherData.emergency_contact || '',
         emergency_contact_relation: teacherData.emergency_contact_relation || '',
         preferred_classes: teacherData.preferred_classes || '',
@@ -184,8 +187,9 @@ const TeacherForm = ({ teacher = null, onSubmit, onCancel, mode = 'create' }) =>
     // Professional validation - qualification and experience no longer required
     if (!formData.subjects.trim()) newErrors.subjects = 'At least one subject is required';
 
-    // Phone validation
-    if (formData.phone && !/^[0-9+\-\s()]+$/.test(formData.phone)) {
+    // Phone validation - make phone required
+    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
+    else if (!/^[0-9+\-\s()]+$/.test(formData.phone)) {
       newErrors.phone = 'Invalid phone format';
     }
     if (formData.emergency_contact && !/^[0-9+\-\s()]+$/.test(formData.emergency_contact)) {
@@ -196,8 +200,19 @@ const TeacherForm = ({ teacher = null, onSubmit, onCancel, mode = 'create' }) =>
     if (formData.experience_years && (isNaN(formData.experience_years) || formData.experience_years < 0)) {
       newErrors.experience_years = 'Experience years must be a valid number';
     }
-    if (formData.hourly_rate && (isNaN(formData.hourly_rate) || formData.hourly_rate < 0)) {
-      newErrors.hourly_rate = 'Hourly rate must be a valid number';
+    // Salary/Rate validation based on employment type - make required
+    if (formData.employment_type === 'full_time') {
+      if (!formData.monthly_salary) {
+        newErrors.monthly_salary = 'Monthly salary is required for full-time employment';
+      } else if (isNaN(formData.monthly_salary) || formData.monthly_salary < 0) {
+        newErrors.monthly_salary = 'Monthly salary must be a valid number';
+      }
+    } else {
+      if (!formData.hourly_rate) {
+        newErrors.hourly_rate = 'Hourly rate is required for part-time/contract employment';
+      } else if (isNaN(formData.hourly_rate) || formData.hourly_rate < 0) {
+        newErrors.hourly_rate = 'Hourly rate must be a valid number';
+      }
     }
 
     setErrors(newErrors);
@@ -220,6 +235,7 @@ const TeacherForm = ({ teacher = null, onSubmit, onCancel, mode = 'create' }) =>
         joining_date: formData.joining_date ? new Date(formData.joining_date).toISOString() : null,
         experience_years: formData.experience_years ? parseInt(formData.experience_years) : null,
         hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null,
+        monthly_salary: formData.monthly_salary ? parseFloat(formData.monthly_salary) : null,
         max_classes_per_day: parseInt(formData.max_classes_per_day)
       };
 
@@ -252,20 +268,35 @@ const TeacherForm = ({ teacher = null, onSubmit, onCancel, mode = 'create' }) =>
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">
-          {mode === 'create' ? 'Create Teacher Profile' : 'Edit Teacher Profile'}
-        </h2>
-        <p className="text-gray-600 mt-2">
-          {mode === 'create' 
-            ? 'Create a comprehensive teacher profile with user account'
-            : 'Update teacher information and preferences'
-          }
-        </p>
-      </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {mode === 'create' ? 'Create Teacher Profile' : 'Edit Teacher Profile'}
+              </h2>
+              <p className="text-gray-600 mt-1">
+                {mode === 'create' 
+                  ? 'Create a comprehensive teacher profile with user account'
+                  : 'Update teacher information and preferences'
+                }
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
         {/* User Account Information (Create Mode Only) */}
         {mode === 'create' && (
           <div className="border border-gray-200 rounded-lg p-6">
@@ -323,7 +354,9 @@ const TeacherForm = ({ teacher = null, onSubmit, onCancel, mode = 'create' }) =>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="tel"
                   name="phone"
@@ -367,16 +400,25 @@ const TeacherForm = ({ teacher = null, onSubmit, onCancel, mode = 'create' }) =>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Confirm Password <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Confirm password"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Confirm password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
                 {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
               </div>
             </div>
@@ -621,24 +663,45 @@ const TeacherForm = ({ teacher = null, onSubmit, onCancel, mode = 'create' }) =>
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Hourly Rate ({formData.employment_type === 'full_time' ? 'Full Time' : 'Part Time'})
-              </label>
-              <input
-                type="number"
-                name="hourly_rate"
-                value={formData.hourly_rate}
-                onChange={handleInputChange}
-                min="0"
-                step="0.01"
-                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.hourly_rate ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder={formData.employment_type === 'full_time' ? 'Hourly rate for full-time' : 'Hourly rate for part-time'}
-              />
-              {errors.hourly_rate && <p className="text-red-500 text-sm mt-1">{errors.hourly_rate}</p>}
-            </div>
+            {formData.employment_type === 'full_time' ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Monthly Salary <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="monthly_salary"
+                  value={formData.monthly_salary}
+                  onChange={handleInputChange}
+                  min="0"
+                  step="0.01"
+                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.monthly_salary ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter monthly salary"
+                />
+                {errors.monthly_salary && <p className="text-red-500 text-sm mt-1">{errors.monthly_salary}</p>}
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Hourly Rate <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="hourly_rate"
+                  value={formData.hourly_rate}
+                  onChange={handleInputChange}
+                  min="0"
+                  step="0.01"
+                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.hourly_rate ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter hourly rate"
+                />
+                {errors.hourly_rate && <p className="text-red-500 text-sm mt-1">{errors.hourly_rate}</p>}
+              </div>
+            )}
           </div>
 
           <div className="mt-4">
@@ -666,25 +729,27 @@ const TeacherForm = ({ teacher = null, onSubmit, onCancel, mode = 'create' }) =>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-end space-x-4 pt-6 border-t">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-gray-500"
-            disabled={loading}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Saving...' : (mode === 'create' ? 'Create Teacher' : 'Update Profile')}
-          </button>
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-4 pt-6 border-t">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-gray-500"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Saving...' : (mode === 'create' ? 'Create Teacher' : 'Update Profile')}
+              </button>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   );
 };

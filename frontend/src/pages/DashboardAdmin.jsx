@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
+import { useNavigate } from 'react-router-dom';
 import StatCard from '../components/StatCard';
+import { studentsAPI, teachersAPI, academicsAPI, dashboardAPI } from '../services/api';
 import { 
   Users, 
   UserCheck, 
@@ -15,33 +16,18 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 
 export default function DashboardAdmin() {
+  const navigate = useNavigate();
   const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState([
+    { title: 'Total Students', value: '0', icon: Users, color: 'blue', trend: 'up', trendValue: '+0%' },
+    { title: 'Active Teachers', value: '0', icon: UserCheck, color: 'green', trend: 'up', trendValue: '+0%' },
+    { title: 'Total Batches', value: '0', icon: BookOpen, color: 'purple', trend: 'up', trendValue: '+0%' },
+    { title: 'Monthly Revenue', value: '$0', icon: TrendingUp, color: 'orange', trend: 'up', trendValue: '+0%' },
+  ]);
 
-  // Mock data - replace with real API calls
-  const stats = [
-    { title: 'Total Students', value: '1,247', icon: Users, color: 'blue', trend: 'up', trendValue: '+12%' },
-    { title: 'Active Teachers', value: '89', icon: UserCheck, color: 'green', trend: 'up', trendValue: '+5%' },
-    { title: 'Total Batches', value: '24', icon: BookOpen, color: 'purple', trend: 'up', trendValue: '+8%' },
-    { title: 'Monthly Revenue', value: '$45,230', icon: TrendingUp, color: 'orange', trend: 'up', trendValue: '+15%' },
-  ];
-
-  const enrollmentData = [
-    { month: 'Jan', students: 120, teachers: 8 },
-    { month: 'Feb', students: 150, teachers: 12 },
-    { month: 'Mar', students: 180, teachers: 15 },
-    { month: 'Apr', students: 220, teachers: 18 },
-    { month: 'May', students: 280, teachers: 22 },
-    { month: 'Jun', students: 320, teachers: 25 },
-  ];
-
-  const batchDistribution = [
-    { name: 'Computer Science', value: 340, color: '#3B82F6' },
-    { name: 'Mathematics', value: 280, color: '#10B981' },
-    { name: 'Physics', value: 220, color: '#8B5CF6' },
-    { name: 'Chemistry', value: 180, color: '#F59E0B' },
-    { name: 'Biology', value: 150, color: '#EF4444' },
-  ];
+  const [enrollmentData, setEnrollmentData] = useState([]);
+  const [batchDistribution, setBatchDistribution] = useState([]);
 
   const recentActivityData = [
     { id: 1, type: 'student', action: 'New student enrolled', user: 'John Doe', time: '2 minutes ago', color: 'text-green-600' },
@@ -52,14 +38,82 @@ export default function DashboardAdmin() {
   ];
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setRecentActivities(recentActivityData);
-      setLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    loadDashboardData();
   }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch data from APIs
+      const [studentsResponse, teachersResponse, batchesResponse] = await Promise.all([
+        studentsAPI.getStudents().catch(() => ({ data: [] })),
+        teachersAPI.getTeachers().catch(() => []),
+        academicsAPI.getBatches().catch(() => ({ results: [] }))
+      ]);
+      
+      // Process students data
+      const students = Array.isArray(studentsResponse) ? studentsResponse : (studentsResponse.data || []);
+      const totalStudents = students.length;
+      
+      // Process teachers data  
+      const teachers = Array.isArray(teachersResponse) ? teachersResponse : (teachersResponse.data || []);
+      const totalTeachers = teachers.length;
+      const activeTeachers = teachers.filter(t => t.is_active !== false).length;
+      
+      // Process batches data
+      const batches = Array.isArray(batchesResponse) ? batchesResponse : (batchesResponse.results || []);
+      const totalBatches = batches.length;
+      
+      // Calculate monthly revenue (mock for now)
+      const monthlyRevenue = totalStudents * 1200; // Assuming $1200 per student per month
+      
+      // Update stats
+      setStats([
+        { title: 'Total Students', value: totalStudents.toString(), icon: Users, color: 'blue', trend: 'up', trendValue: `+${Math.floor(totalStudents * 0.1)}` },
+        { title: 'Active Teachers', value: activeTeachers.toString(), icon: UserCheck, color: 'green', trend: 'up', trendValue: `+${Math.floor(activeTeachers * 0.05)}` },
+        { title: 'Total Batches', value: totalBatches.toString(), icon: BookOpen, color: 'purple', trend: 'up', trendValue: `+${Math.floor(totalBatches * 0.08)}` },
+        { title: 'Monthly Revenue', value: `$${monthlyRevenue.toLocaleString()}`, icon: TrendingUp, color: 'orange', trend: 'up', trendValue: '+15%' },
+      ]);
+      
+      // Generate batch distribution based on class_name
+      const classDistribution = batches.reduce((acc, batch) => {
+        const className = batch.class_name || 'Unknown';
+        acc[className] = (acc[className] || 0) + (batch.current_students || 0);
+        return acc;
+      }, {});
+      
+      const colors = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#06B6D4', '#8B5A2B'];
+      const distributionData = Object.entries(classDistribution).map(([name, value], index) => ({
+        name,
+        value,
+        color: colors[index % colors.length]
+      }));
+      
+      setBatchDistribution(distributionData);
+      
+      // Generate enrollment trend data (mock based on current data)
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+      const enrollmentTrend = months.map((month, index) => {
+        const factor = (index + 1) / 6;
+        return {
+          month,
+          students: Math.floor(totalStudents * factor * 0.8),
+          teachers: Math.floor(totalTeachers * factor * 0.9)
+        };
+      });
+      
+      setEnrollmentData(enrollmentTrend);
+      
+      // Set recent activities
+      setRecentActivities(recentActivityData);
+      
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getActivityIcon = (type) => {
     switch (type) {
@@ -73,8 +127,7 @@ export default function DashboardAdmin() {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
@@ -107,41 +160,59 @@ export default function DashboardAdmin() {
           {/* Enrollment Trends */}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Enrollment Trends</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={enrollmentData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="students" fill="#3B82F6" name="Students" />
-                <Bar dataKey="teachers" fill="#10B981" name="Teachers" />
-              </BarChart>
-            </ResponsiveContainer>
+            {enrollmentData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={enrollmentData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="students" fill="#3B82F6" name="Students" />
+                  <Bar dataKey="teachers" fill="#10B981" name="Teachers" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-64 text-gray-500">
+                <div className="text-center">
+                  <BarChart3 size={48} className="mx-auto mb-4 text-gray-300" />
+                  <p>No enrollment data available</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Batch Distribution */}
           <div className="card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Batch Distribution</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={batchDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {batchDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Class Distribution</h3>
+            {batchDistribution.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={batchDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {batchDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-64 text-gray-500">
+                <div className="text-center">
+                  <BookOpen size={48} className="mx-auto mb-4 text-gray-300" />
+                  <p>No class data available</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -188,7 +259,10 @@ export default function DashboardAdmin() {
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
             <div className="space-y-3">
-              <button className="w-full btn-primary text-left py-3 px-4 flex items-center justify-between group">
+              <button 
+                onClick={() => navigate('/admin/students')}
+                className="w-full btn-primary text-left py-3 px-4 flex items-center justify-between group"
+              >
                 <div className="flex items-center">
                   <Users size={20} className="mr-3" />
                   Add Student
@@ -196,7 +270,10 @@ export default function DashboardAdmin() {
                 <span className="text-white group-hover:translate-x-1 transition-transform">→</span>
               </button>
               
-              <button className="w-full btn-success text-left py-3 px-4 flex items-center justify-between group">
+              <button 
+                onClick={() => navigate('/admin/teachers')}
+                className="w-full btn-success text-left py-3 px-4 flex items-center justify-between group"
+              >
                 <div className="flex items-center">
                   <UserCheck size={20} className="mr-3" />
                   Add Teacher
@@ -204,7 +281,10 @@ export default function DashboardAdmin() {
                 <span className="text-white group-hover:translate-x-1 transition-transform">→</span>
               </button>
               
-              <button className="w-full btn-secondary text-left py-3 px-4 flex items-center justify-between group">
+              <button 
+                onClick={() => navigate('/admin/batches')}
+                className="w-full btn-secondary text-left py-3 px-4 flex items-center justify-between group"
+              >
                 <div className="flex items-center">
                   <BookOpen size={20} className="mr-3" />
                   Create Batch
@@ -212,7 +292,10 @@ export default function DashboardAdmin() {
                 <span className="text-white group-hover:translate-x-1 transition-transform">→</span>
               </button>
               
-              <button className="w-full bg-purple-600 hover:bg-purple-700 text-white text-left py-3 px-4 rounded-md transition-colors duration-200 font-medium flex items-center justify-between group">
+              <button 
+                onClick={() => navigate('/admin/permissions')}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white text-left py-3 px-4 rounded-md transition-colors duration-200 font-medium flex items-center justify-between group"
+              >
                 <div className="flex items-center">
                   <BarChart3 size={20} className="mr-3" />
                   View Reports
@@ -253,6 +336,5 @@ export default function DashboardAdmin() {
           </div>
         </div>
       </div>
-    </Layout>
   );
 }

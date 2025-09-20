@@ -26,15 +26,20 @@ const BatchStudentAssignment = ({ batchId, onClose, onUpdate }) => {
     try {
       // Fetch batch details
       const batchResponse = await academicsAPI.getBatch(batchId);
-      setBatchDetails(batchResponse.data);
-      setAssignedStudents(batchResponse.data.students || []);
+      const batchData = batchResponse.data || batchResponse;
+      setBatchDetails(batchData);
+      
+      // Fetch assigned students for this batch
+      const assignedStudentsResponse = await studentsAPI.getStudentsByBatch(batchId);
+      const assignedStudentsList = assignedStudentsResponse.data || assignedStudentsResponse || [];
+      setAssignedStudents(assignedStudentsList);
 
       // Fetch all students
       const studentsResponse = await studentsAPI.getStudents();
-      const allStudents = studentsResponse.data.students || studentsResponse.data || [];
+      const allStudents = studentsResponse.students || studentsResponse.data || studentsResponse || [];
 
       // Filter out already assigned students
-      const assignedIds = (batchResponse.data.students || []).map(s => s.id);
+      const assignedIds = assignedStudentsList.map(s => s.id);
       const available = allStudents.filter(student => !assignedIds.includes(student.id));
       setAvailableStudents(available);
 
@@ -117,8 +122,8 @@ const BatchStudentAssignment = ({ batchId, onClose, onUpdate }) => {
   };
 
   const filteredAvailableStudents = availableStudents.filter(student => {
-    const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.student_id?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (student.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (student.student_reg_number || student.student_id || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesClass = !filterClass || student.class_name === filterClass;
     const matchesVersion = !filterVersion || student.version === filterVersion;
     
@@ -261,13 +266,13 @@ const BatchStudentAssignment = ({ batchId, onClose, onUpdate }) => {
                           />
                           <div className="flex-1">
                             <div className="font-medium text-gray-900">
-                              {student.name}
+                              {student.full_name}
                             </div>
                             <div className="text-sm text-gray-600">
-                              ID: {student.student_id} | {student.class_name} ({student.version})
+                              ID: {student.student_reg_number || student.student_id} | {student.class_name} ({student.version})
                             </div>
                             <div className="text-xs text-gray-500">
-                              Contact: {student.contact_number_1}
+                              Contact: {student.student_contact || student.father_contact || student.phone || 'N/A'}
                             </div>
                           </div>
                         </div>
@@ -305,17 +310,17 @@ const BatchStudentAssignment = ({ batchId, onClose, onUpdate }) => {
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="font-medium text-gray-900">
-                            {student.name}
+                            {student.full_name}
                           </div>
                           <div className="text-sm text-gray-600">
-                            ID: {student.student_id} | {student.class_name} ({student.version})
+                            ID: {student.student_reg_number || student.student_id} | {student.class_name} ({student.version})
                           </div>
                           <div className="text-xs text-gray-500">
-                            Contact: {student.contact_number_1}
+                            Contact: {student.student_contact || student.father_contact || student.phone || 'N/A'}
                           </div>
-                          {student.roll_number && (
+                          {student.student_roll_number && (
                             <div className="text-xs text-gray-500">
-                              Roll: {student.roll_number}
+                              Roll: {student.student_roll_number}
                             </div>
                           )}
                         </div>
