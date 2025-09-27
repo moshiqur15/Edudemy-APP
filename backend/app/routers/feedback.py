@@ -1,57 +1,93 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi.responses import FileResponse
+from sqlmodel import Session, select, func
 from typing import List, Optional
 from datetime import datetime
+import os
+import uuid
+import shutil
+
 from ..database import get_session
-from ..models import User, FeedbackForm, Student
-from ..schemas import FeedbackCreate, FeedbackRead, FeedbackResponse
-from ..core.deps import get_current_user, require_role
-from .notifications import send_student_issue_notification
+from ..models import User
+from ..models.feedback import (
+    Feedback, FeedbackResponse, FeedbackCreate, FeedbackResponse_Create,
+    FeedbackRead, FeedbackResponseRead, FeedbackList
+)
+from ..core.deps import get_current_user
+from ..core.permissions import require_role
+from ..routers.notifications import create_notification
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 
-@router.post("/", response_model=FeedbackRead)
-def submit_feedback(
-    feedback: FeedbackCreate,
+# Directory to store feedback attachments
+UPLOAD_DIR = "uploads/feedback"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@router.post("/", response_model=dict)
+async def create_feedback(
+    subject: str = Form(...),
+    content: str = Form(...),
+    is_anonymous: bool = Form(False),
+    attachment: Optional[UploadFile] = File(None),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    # Check if user is a student
-    if current_user.role != "student":
-        raise HTTPException(status_code=403, detail="Only students can submit feedback")
-    
-    # Get student record
-    student = session.exec(
-        select(Student).where(Student.user_id == current_user.id)
-    ).first()
-    
-    if not student:
-        raise HTTPException(status_code=404, detail="Student record not found")
-    
-    # Create feedback
-    db_feedback = FeedbackForm(
-        student_id=student.id,
-        feedback_type=feedback.feedback_type,
-        subject=feedback.subject,
-        message=feedback.message,
-        is_anonymous=feedback.is_anonymous
-    )
-    
-    session.add(db_feedback)
-    session.commit()
-    session.refresh(db_feedback)
-    
-    # Send notification to admin and management users
-    admin_users = session.exec(
-        select(User).where(
-            User.role.in_(["admin", "superadmin", "management"]),
-            User.is_active == True
+    """Create a new feedback submission"""
+    try:
+        # Handle file upload if present
+        attachment_path = None
+        attachment_filename = None
+        
+        if attachment:
+            # Generate unique filename
+            file_extension = os.path.splitext(attachment.filename)[1]
+            unique_filename = f"{uuid.uuid4()}{file_extension}"
+            attachment_path = os.path.join(UPLOAD_DIR, unique_filename)
+            attachment_filename = attachment.filename
+            
+            # Save file
+            with open(attachment_path, "wb") as buffer:
+                shutil.copyfileobj(attachment.file, buffer)
+        
+        # Create feedback record
+        feedback = Feedback(
+            subject=subject,
+            content=content,
+            is_anonymous=is_anonymous,
+            sender_id=current_user.id,
+            sender_name=None if is_anonymous else current_user.full_name,
+            sender_position=None if is_anonymous else getattr(current_user, 'designation', current_user.role.value),
+            attachment_path=attachment_path,
+            attachment_filename=attachment_filename,
+            status="pending"
         )
-    ).all()
-    
-    send_student_issue_notification(session, db_feedback.id, admin_users)
-    
-    return db_feedback
+        
+        session.add(feedback)
+        session.commit()
+        session.refresh(feedback)
+        
+        # Send notifications to all admins and superadmins
+        admin_users = session.exec(
+            select(User).where(User.role.in_(["admin", "superadmin"]))
+        ).all()
+        
+        for admin in admin_users:
+            await create_notification(
+                session=session,
+                user_id=admin.id,
+                title="New Feedback Received",
+                message=f"New feedback: '{subject}' from {current_user.full_name if not is_anonymous else 'Anonymous'}",
+                type="general",
+                created_by=current_user.id
+            )
+        
+        return {"message": "Feedback submitted successfully", "feedback_id": feedback.id}
+        
+    except Exception as e:
+        session.rollback()
+        if attachment_path and os.path.exists(attachment_path):
+            os.remove(attachment_path)
+        raise HTTPException(status_code=500, detail=f"Failed to submit feedback: {str(e)}")
 
 @router.get("/my-feedback", response_model=List[FeedbackRead])
 def get_my_feedback(

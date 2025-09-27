@@ -10,10 +10,41 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Helper function to check if we're in mock mode
+const isMockMode = () => {
+  const token = localStorage.getItem('access_token');
+  return token && token.startsWith('mock_token_');
+};
+
+// Helper function to generate mock response
+const createMockResponse = (data = [], message = 'Mock data - backend not connected') => {
+  return Promise.resolve({
+    data: {
+      data,
+      message,
+      total: Array.isArray(data) ? data.length : 0,
+      page: 1,
+      limit: 10
+    },
+    status: 200,
+    statusText: 'OK'
+  });
+};
+
+// Request interceptor to add auth token and handle mock mode
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
+    
+    // If using mock token, don't make real API calls
+    if (isMockMode()) {
+      // Return a cancelled request that will be handled by the response interceptor
+      const cancelledError = new Error('Mock mode - API call cancelled');
+      cancelledError.isMockMode = true;
+      cancelledError.config = config;
+      return Promise.reject(cancelledError);
+    }
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -24,16 +55,94 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle auth errors
+// Response interceptor to handle auth errors and mock mode
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
+    // Handle mock mode cancellation
+    if (error.isMockMode) {
+      const url = error.config.url;
+      
+      // Return different mock data based on endpoint
+      if (url.includes('/batches') || url.includes('getBatches')) {
+        return createMockResponse([
+          { id: 1, name: 'Class 1 - Batch A', class_name: 'Class 1', current_students_count: 25 },
+          { id: 2, name: 'Class 2 - Batch A', class_name: 'Class 2', current_students_count: 30 },
+          { id: 3, name: 'Class 3 - Batch A', class_name: 'Class 3', current_students_count: 28 }
+        ]);
+      }
+      
+      if (url.includes('/students') || url.includes('getStudents')) {
+        return createMockResponse([
+          { id: 1, full_name: 'John Doe', student_id: 'STU001', class_name: 'Class 1' },
+          { id: 2, full_name: 'Jane Smith', student_id: 'STU002', class_name: 'Class 1' },
+          { id: 3, full_name: 'Mike Johnson', student_id: 'STU003', class_name: 'Class 1' }
+        ]);
+      }
+      
+      if (url.includes('/users/me') || url.includes('getCurrentUser')) {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        return Promise.resolve({ data: user });
+      }
+      
+      if (url.includes('/analytics') || url.includes('dashboard')) {
+        return createMockResponse({
+          totalUsers: 150,
+          totalStudents: 120,
+          totalTeachers: 25,
+          attendanceRate: '89.5%'
+        });
+      }
+      
+      if (url.includes('/access-requests') || url.includes('accessRequest')) {
+        return createMockResponse([
+          {
+            id: 1,
+            full_name: 'John Smith',
+            email: 'john.smith@example.com',
+            requested_role: 'teacher',
+            status: 'pending',
+            created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            reason: 'I would like to join as a Mathematics teacher'
+          },
+          {
+            id: 2,
+            full_name: 'Sarah Wilson',
+            email: 'sarah.wilson@example.com',
+            requested_role: 'student',
+            status: 'approved',
+            created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+            reason: 'Requesting student access for Computer Science course'
+          },
+          {
+            id: 3,
+            full_name: 'Mike Johnson',
+            email: 'mike.johnson@example.com',
+            requested_role: 'management',
+            status: 'pending',
+            created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+            reason: 'Applying for management role in academics department'
+          }
+        ]);
+      }
+      
+      // Default empty response for other endpoints
+      return createMockResponse([]);
+    }
+    
+    if (error.response?.status === 401 && !isMockMode()) {
+      // Token expired or invalid (only for real tokens)
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+    
+    // In development mode, handle network errors gracefully
+    if (import.meta.env.DEV && (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK')) {
+      // Return empty data structure instead of throwing
+      return createMockResponse([]);
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -492,13 +601,18 @@ export const notificationsAPI = {
 
 // Feedback API
 export const feedbackAPI = {
-  submitFeedback: async (feedbackData) => {
-    const response = await api.post('/feedback/', feedbackData);
+  submitFeedback: async (formData) => {
+    // Support both form data (with files) and regular objects
+    const config = {};
+    if (formData instanceof FormData) {
+      config.headers = { 'Content-Type': 'multipart/form-data' };
+    }
+    const response = await api.post('/feedback/', formData, config);
     return response.data;
   },
 
   getMyFeedback: async (params = {}) => {
-    const response = await api.get('/feedback/my-feedback', { params });
+    const response = await api.get('/feedback/my/submissions', { params });
     return response.data;
   },
 
@@ -523,13 +637,22 @@ export const feedbackAPI = {
   },
 
   respondToFeedback: async (feedbackId, responseData) => {
-    const response = await api.put(`/feedback/${feedbackId}/respond`, responseData);
+    const response = await api.post(`/feedback/${feedbackId}/respond`, responseData);
     return response.data;
   },
 
   updateFeedbackStatus: async (feedbackId, status) => {
-    const response = await api.put(`/feedback/${feedbackId}/status`, { status });
+    const response = await api.put(`/feedback/${feedbackId}/status`, null, {
+      params: { status }
+    });
     return response.data;
+  },
+
+  downloadFeedbackAttachment: async (feedbackId) => {
+    const response = await api.get(`/feedback/${feedbackId}/attachment`, {
+      responseType: 'blob'
+    });
+    return response;
   },
 };
 
@@ -665,6 +788,46 @@ export const permissionsAPI = {
     const response = await api.get('/permissions/my-permissions');
     return response.data;
   },
+
+  // System permissions management for UI
+  getAvailableSystemPermissions: async () => {
+    const response = await api.get('/permissions/system/available');
+    return response.data;
+  },
+
+  getSystemRolePermissions: async () => {
+    const response = await api.get('/permissions/system/roles');
+    return response.data;
+  },
+
+  updateSystemRolePermissions: async (role, permissions) => {
+    const response = await api.put(`/permissions/system/roles/${role}`, {
+      permissions
+    });
+    return response.data;
+  },
+
+  getSystemUserPermissions: async (userId) => {
+    const response = await api.get(`/permissions/system/user/${userId}`);
+    return response.data;
+  },
+
+  updateSystemUserPermissions: async (userId, permissions) => {
+    const response = await api.put(`/permissions/system/user/${userId}`, {
+      permissions
+    });
+    return response.data;
+  },
+
+  getEffectiveSystemPermissions: async (userId) => {
+    const response = await api.get(`/permissions/system/effective/${userId}`);
+    return response.data;
+  },
+
+  getPermissionStats: async () => {
+    const response = await api.get('/permissions/system/stats');
+    return response.data;
+  },
 };
 
 // Access Request API
@@ -689,5 +852,56 @@ export const accessRequestAPI = {
     return response.data;
   },
 };
+
+// Convenience functions for backward compatibility
+export const submitFeedback = feedbackAPI.submitFeedback;
+export const getFeedbackList = feedbackAPI.getAllFeedback;
+export const getFeedbackDetails = feedbackAPI.getFeedbackDetail;
+export const respondToFeedback = feedbackAPI.respondToFeedback;
+export const updateFeedbackStatus = feedbackAPI.updateFeedbackStatus;
+export const downloadFeedbackAttachment = feedbackAPI.downloadFeedbackAttachment;
+export const getMyFeedback = feedbackAPI.getMyFeedback;
+
+// Behavior Records API (dedicated export for easier use)
+export const behaviorAPI = {
+  getBehaviorRecords: async (batchId, params = {}) => {
+    const queryParams = batchId ? { ...params, batch_id: batchId } : params;
+    const response = await api.get('/academics/behavior-records/', { params: queryParams });
+    return response.data;
+  },
+
+  createBehaviorRecord: async (recordData) => {
+    const response = await api.post('/academics/behavior-records/', recordData);
+    return response.data;
+  },
+
+  updateBehaviorRecord: async (recordId, recordData) => {
+    const response = await api.put(`/academics/behavior-records/${recordId}`, recordData);
+    return response.data;
+  },
+
+  deleteBehaviorRecord: async (recordId) => {
+    const response = await api.delete(`/academics/behavior-records/${recordId}`);
+    return response.data;
+  },
+
+  getBehaviorRecord: async (recordId) => {
+    const response = await api.get(`/academics/behavior-records/${recordId}`);
+    return response.data;
+  },
+
+  getBehaviorAnalytics: async (params = {}) => {
+    const response = await api.get('/academics/behavior-records/analytics', { params });
+    return response.data;
+  },
+
+  getBehaviorReports: async (params = {}) => {
+    const response = await api.get('/academics/behavior-records/reports', { params });
+    return response.data;
+  }
+};
+
+// API aliases for backward compatibility
+export const batchesAPI = academicsAPI;
 
 export default api;

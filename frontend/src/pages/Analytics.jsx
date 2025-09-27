@@ -19,7 +19,22 @@ import {
   Download,
   RefreshCw,
   Eye,
-  ChevronDown
+  ChevronDown,
+  BarChart3,
+  Target,
+  Activity,
+  CheckCircle,
+  AlertCircle,
+  Star,
+  AlertTriangle,
+  UserCheck,
+  FileText,
+  Printer,
+  Share2,
+  Settings,
+  Monitor,
+  Smartphone,
+  Globe
 } from 'lucide-react';
 
 export default function Analytics() {

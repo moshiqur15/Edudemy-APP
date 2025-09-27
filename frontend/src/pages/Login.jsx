@@ -199,17 +199,33 @@ export default function Login() {
             
             {/* Demo Credentials */}
             <div className="mt-8 pt-6 border-t border-gray-200">
-              <p className="text-sm text-gray-600 text-center mb-3">Demo Credentials:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="bg-blue-50 p-3 rounded-md">
-                  <p className="font-semibold text-blue-800">Admin Access</p>
-                  <p className="text-blue-600">Username: admin</p>
-                  <p className="text-blue-600">Password: admin123</p>
+              <p className="text-sm text-gray-600 text-center mb-3">Demo Credentials (Development Mode):</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <div className="bg-red-50 p-2 rounded-md">
+                  <p className="font-semibold text-red-800">Super Admin</p>
+                  <p className="text-red-600">superadmin / super123</p>
                 </div>
-                <div className="bg-green-50 p-3 rounded-md">
-                  <p className="font-semibold text-green-800">Teacher Access</p>
-                  <p className="text-green-600">Username: teacher</p>
-                  <p className="text-green-600">Password: teacher123</p>
+                <div className="bg-blue-50 p-2 rounded-md">
+                  <p className="font-semibold text-blue-800">Admin</p>
+                  <p className="text-blue-600">admin / admin123</p>
+                </div>
+                <div className="bg-green-50 p-2 rounded-md">
+                  <p className="font-semibold text-green-800">Teacher</p>
+                  <p className="text-green-600">teacher / teacher123</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs mt-2">
+                <div className="bg-purple-50 p-2 rounded-md">
+                  <p className="font-semibold text-purple-800">Student</p>
+                  <p className="text-purple-600">student / student123</p>
+                </div>
+                <div className="bg-orange-50 p-2 rounded-md">
+                  <p className="font-semibold text-orange-800">Management</p>
+                  <p className="text-orange-600">management / demo123</p>
+                </div>
+                <div className="bg-indigo-50 p-2 rounded-md">
+                  <p className="font-semibold text-indigo-800">Academics</p>
+                  <p className="text-indigo-600">academics / demo123</p>
                 </div>
               </div>
             </div>

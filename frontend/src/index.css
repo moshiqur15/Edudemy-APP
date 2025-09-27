@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}
+
 /* Custom base styles */
 * {
   box-sizing: border-box;
@@ -84,6 +91,10 @@ html, body {
     animation: slideUp 0.3s ease-out;
   }
   
+  .animate-slide-in {
+    animation: slideInFromRight 0.3s ease-out;
+  }
+  
   .animate-pulse-slow {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
@@ -108,6 +119,17 @@ html, body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 

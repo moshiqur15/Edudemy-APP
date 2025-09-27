@@ -1,0 +1,147 @@
+{
+  "name": "EduDemy - Education Management System",
+  "short_name": "EduDemy",
+  "description": "Complete education management system for schools and educational institutions",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["education", "productivity", "business"],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Dashboard overview on desktop"
+    },
+    {
+      "src": "/screenshots/mobile-1.png",
+      "sizes": "360x640",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile dashboard view"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View system dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icons/shortcut-dashboard.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Classes",
+      "short_name": "Classes",
+      "description": "Manage classes and students",
+      "url": "/classes-students",
+      "icons": [{ "src": "/icons/shortcut-classes.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Attendance",
+      "short_name": "Attendance",
+      "description": "Take attendance",
+      "url": "/attendance",
+      "icons": [{ "src": "/icons/shortcut-attendance.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Exams",
+      "short_name": "Exams",
+      "description": "Exam management",
+      "url": "/exam-management",
+      "icons": [{ "src": "/icons/shortcut-exams.png", "sizes": "96x96" }]
+    }
+  ],
+  "share_target": {
+    "action": "/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": [
+            "image/*",
+            "application/pdf",
+            ".doc",
+            ".docx",
+            ".xls",
+            ".xlsx"
+          ]
+        }
+      ]
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+edudemy",
+      "url": "/handle-protocol?url=%s"
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  }
+}

@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import init_db
-from .routers import auth, users, students, teachers, permissions, messaging, notifications, feedback, academics, admin
+from .routers import auth, users, students, teachers, permissions, messaging, notifications, academics, admin
+from .routers import feedback_new as feedback
 from .config import settings    
 
 app = FastAPI(title='Edudemy API')

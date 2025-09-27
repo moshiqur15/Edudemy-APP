@@ -74,6 +74,8 @@ class User(UserBase, table=True):
         back_populates='assigned_to_user',
         sa_relationship_kwargs={"foreign_keys": "[Task.assigned_to]"}
     )
+    sent_feedback: List['Feedback'] = Relationship(back_populates='sender')
+    feedback_responses: List['FeedbackResponse'] = Relationship(back_populates='responder')
 
 # Permission System Models
 class Permission(SQLModel, table=True):
@@ -488,3 +490,71 @@ class AccessRequest(SQLModel, table=True):
     # IP and Security
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
+
+# New Comprehensive Feedback System
+class Feedback(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    subject: str = Field(max_length=200)
+    content: str
+    is_anonymous: bool = Field(default=False)
+    sender_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    sender_name: Optional[str] = Field(default=None)  # Store name for non-anonymous feedback
+    sender_position: Optional[str] = Field(default=None)  # Store position for non-anonymous feedback
+    attachment_path: Optional[str] = Field(default=None)
+    attachment_filename: Optional[str] = Field(default=None)
+    status: str = Field(default="pending")  # pending, responded, closed
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Relationship
+    sender: Optional["User"] = Relationship(back_populates="sent_feedback")
+    responses: List["FeedbackResponse"] = Relationship(back_populates="feedback")
+
+class FeedbackResponse(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    feedback_id: int = Field(foreign_key="feedback.id")
+    responder_id: int = Field(foreign_key="user.id")
+    response_content: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    feedback: Optional[Feedback] = Relationship(back_populates="responses")
+    responder: Optional["User"] = Relationship(back_populates="feedback_responses")
+
+# Pydantic models for API
+class FeedbackCreate(SQLModel):
+    subject: str
+    content: str
+    is_anonymous: bool = False
+    attachment_filename: Optional[str] = None
+
+class FeedbackResponse_Create(SQLModel):
+    response_content: str
+
+class FeedbackRead(SQLModel):
+    id: int
+    subject: str
+    content: str
+    is_anonymous: bool
+    sender_name: Optional[str] = None
+    sender_position: Optional[str] = None
+    attachment_filename: Optional[str] = None
+    status: str
+    created_at: datetime
+    responses: List["FeedbackResponseRead"] = []
+
+class FeedbackResponseRead(SQLModel):
+    id: int
+    responder_id: int
+    responder_name: Optional[str] = None
+    response_content: str
+    created_at: datetime
+
+class FeedbackList(SQLModel):
+    id: int
+    subject: str
+    is_anonymous: bool
+    sender_name: Optional[str] = None
+    status: str
+    created_at: datetime
+    responses_count: int = 0

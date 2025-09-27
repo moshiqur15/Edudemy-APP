@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { notificationsAPI } from '../services/api';
 import MessagingWidget from './MessagingWidget';
@@ -42,12 +43,14 @@ import {
 
 export default function Layout({ children }) {
   const { user, logout, hasRole } = useAuth();
+  const { hasPermission } = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [recentNotifications, setRecentNotifications] = useState([]);
+  const [expandedItems, setExpandedItems] = useState({});
   const { notifications, isConnected, markNotificationAsRead } = useWebSocket();
 
   // Load initial notifications
@@ -94,71 +97,51 @@ export default function Layout({ children }) {
       { path: '/profile', icon: User, label: 'Profile', color: 'text-green-600' },
     ];
 
-    if (hasRole(['superadmin', 'admin'])) {
-      return [
-        { path: '/admin', icon: Home, label: 'Dashboard', color: 'text-blue-600' },
-        { path: '/admin/users', icon: Users, label: 'User Management', color: 'text-red-600' },
-        { path: '/admin/students', icon: Student, label: 'Students', color: 'text-green-600' },
-        { path: '/admin/teachers', icon: UserCheck, label: 'Teachers', color: 'text-purple-600' },
-        { path: '/admin/batches', icon: BookOpen, label: 'Batches', color: 'text-orange-600' },
-        { path: '/admin/analytics', icon: BarChart3, label: 'Analytics', color: 'text-indigo-600' },
-        { path: '/admin/attendance', icon: CheckCircle, label: 'Attendance', color: 'text-blue-500' },
-        { path: '/admin/feedback', icon: Star, label: 'Feedback', color: 'text-pink-600' },
-        { path: '/admin/permissions', icon: Shield, label: 'Permissions', color: 'text-red-500' },
-        { path: '/admin/settings', icon: Settings, label: 'Settings', color: 'text-gray-600' },
-        ...baseItems
-      ];
+    // Define all possible navigation items with their required permissions
+    const allNavItems = [
+      { path: '/admin', icon: Home, label: 'Dashboard', color: 'text-blue-600', permission: 'dashboard', roles: ['superadmin', 'admin'] },
+      { path: '/admin/users', icon: Users, label: 'User Management', color: 'text-red-600', permission: 'user_management', roles: ['superadmin', 'admin'] },
+      { path: '/admin/students', icon: Student, label: 'Students', color: 'text-green-600', permission: 'students', roles: ['superadmin', 'admin'] },
+      { path: '/admin/teachers', icon: UserCheck, label: 'Teachers', color: 'text-purple-600', permission: 'teachers', roles: ['superadmin', 'admin'] },
+      { path: '/admin/batches', icon: BookOpen, label: 'Batches', color: 'text-orange-600', permission: 'batches', roles: ['superadmin', 'admin'] },
+      { path: '/admin/analytics', icon: BarChart3, label: 'Analytics', color: 'text-indigo-600', permission: 'analytics', roles: ['superadmin', 'admin', 'management', 'academics'] },
+      { 
+        path: '/admin/classes-students', 
+        icon: Calendar, 
+        label: 'Classes and Students', 
+        color: 'text-green-600', 
+        permission: 'classes', 
+        roles: ['superadmin', 'admin', 'academics', 'teacher'],
+        subItems: [
+          { path: '/admin/classes-students/attendance', label: 'Attendance', icon: CheckCircle, color: 'text-blue-500' },
+          { path: '/admin/classes-students/attendance-record', label: 'Attendance Record', icon: BarChart3, color: 'text-green-500' },
+          { path: '/admin/classes-students/gradebook', label: 'Grade Book', icon: Book, color: 'text-purple-500' },
+          { path: '/admin/classes-students/behavior', label: 'Behavior Records', icon: Target, color: 'text-orange-500' }
+        ]
+      },
+      { path: '/admin/exams', icon: Award, label: 'Exam Management', color: 'text-purple-600', permission: 'exams', roles: ['superadmin', 'admin', 'academics'] },
+      { path: '/admin/reports', icon: FileText, label: 'Reports', color: 'text-purple-600', permission: 'reports', roles: ['superadmin', 'admin', 'management', 'academics'] },
+      { path: '/admin/tasks', icon: ClipboardList, label: 'Task Management', color: 'text-green-600', permission: 'tasks', roles: ['superadmin', 'admin', 'management'] },
+      { path: '/admin/feedback', icon: Star, label: 'Feedback', color: 'text-pink-600', permission: 'feedback', roles: ['superadmin', 'admin', 'management', 'student'] },
+      { path: '/admin/permissions', icon: Shield, label: 'Permissions', color: 'text-red-500', permission: 'permissions', roles: ['superadmin', 'admin'] },
+      { path: '/admin/settings', icon: Settings, label: 'Settings', color: 'text-gray-600', permission: 'settings', roles: ['superadmin', 'admin'] },
+    ];
+
+    // Filter items based on user's permissions and role
+    const filteredItems = allNavItems.filter(item => {
+      // Check role requirement first
+      const hasRequiredRole = hasRole(item.roles);
+      // Check permission requirement
+      const hasRequiredPermission = hasPermission(item.permission);
+      return hasRequiredRole && hasRequiredPermission;
+    });
+
+    // Fallback: if no items match, return base items only
+    if (filteredItems.length === 0) {
+      return baseItems;
     }
     
-    if (hasRole('management')) {
-      return [
-        { path: '/management', icon: Home, label: 'Dashboard', color: 'text-blue-600' },
-        { path: '/management/analytics', icon: BarChart3, label: 'Analytics', color: 'text-indigo-600' },
-        { path: '/management/attendance', icon: CheckCircle, label: 'Attendance', color: 'text-blue-500' },
-        { path: '/management/gradebook', icon: Book, label: 'Grade Book', color: 'text-purple-600' },
-        { path: '/management/tasks', icon: ClipboardList, label: 'Task Management', color: 'text-green-600' },
-        { path: '/management/reports', icon: FileText, label: 'Reports', color: 'text-purple-600' },
-        { path: '/management/feedback', icon: Star, label: 'Feedback', color: 'text-pink-600' },
-        ...baseItems
-      ];
-    }
-    
-    if (hasRole('academics')) {
-      return [
-        { path: '/academics', icon: Home, label: 'Dashboard', color: 'text-blue-600' },
-        { path: '/academics/analytics', icon: BarChart3, label: 'Analytics', color: 'text-indigo-600' },
-        { path: '/academics/attendance', icon: CheckCircle, label: 'Attendance', color: 'text-blue-500' },
-        { path: '/academics/gradebook', icon: Book, label: 'Grade Book', color: 'text-purple-600' },
-        { path: '/academics/classes', icon: Calendar, label: 'Class Management', color: 'text-green-600' },
-        { path: '/academics/exams', icon: Award, label: 'Exam Management', color: 'text-purple-600' },
-        { path: '/academics/reports', icon: FileText, label: 'Report Cards', color: 'text-purple-600' },
-        { path: '/academics/behavior', icon: Target, label: 'Behavior Records', color: 'text-orange-600' },
-        { path: '/academics/batches', icon: BookOpen, label: 'Batches', color: 'text-teal-600' },
-        ...baseItems
-      ];
-    }
-    
-    if (hasRole('teacher')) {
-      return [
-        { path: '/teacher', icon: Home, label: 'Dashboard', color: 'text-blue-600' },
-        { path: '/teacher/classes', icon: BookOpen, label: 'My Classes', color: 'text-green-600' },
-        { path: '/teacher/gradebook', icon: Book, label: 'Grade Book', color: 'text-purple-600' },
-        { path: '/teacher/attendance', icon: CheckCircle, label: 'Attendance', color: 'text-blue-500' },
-        ...baseItems
-      ];
-    }
-    
-    if (hasRole('student')) {
-      return [
-        { path: '/student', icon: Home, label: 'Dashboard', color: 'text-blue-600' },
-        { path: '/student/grades', icon: TrendingUp, label: 'My Grades', color: 'text-green-600' },
-        { path: '/student/attendance', icon: Calendar, label: 'My Attendance', color: 'text-blue-500' },
-        { path: '/student/feedback', icon: Star, label: 'Submit Feedback', color: 'text-pink-600' },
-        ...baseItems
-      ];
-    }
-    
-    return baseItems;
+    return [...filteredItems, ...baseItems];
   };
 
   const navItems = getNavItems();
@@ -236,15 +219,56 @@ export default function Layout({ children }) {
           {/* Navigation */}
           <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
             {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`sidebar-item ${isActive(item.path) ? 'active' : ''}`}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <item.icon size={20} className={`mr-3 ${isActive(item.path) ? 'text-blue-600' : item.color}`} />
-                {item.label}
-              </Link>
+              <div key={item.path}>
+                {item.subItems ? (
+                  // Expandable item with sub-items
+                  <div>
+                    <button
+                      onClick={() => setExpandedItems(prev => ({
+                        ...prev,
+                        [item.path]: !prev[item.path]
+                      }))}
+                      className={`w-full sidebar-item ${isActive(item.path) ? 'active' : ''} flex justify-between items-center`}
+                    >
+                      <div className="flex items-center">
+                        <item.icon size={20} className={`mr-3 ${isActive(item.path) ? 'text-blue-600' : item.color}`} />
+                        {item.label}
+                      </div>
+                      <ChevronDown 
+                        size={16} 
+                        className={`transform transition-transform ${expandedItems[item.path] ? 'rotate-180' : ''}`} 
+                      />
+                    </button>
+                    {expandedItems[item.path] && (
+                      <div className="ml-8 mt-1 space-y-1">
+                        {item.subItems.map((subItem) => (
+                          <Link
+                            key={subItem.path}
+                            to={subItem.path}
+                            className={`flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors duration-200 ${
+                              isActive(subItem.path) ? 'bg-blue-50 text-blue-600' : ''
+                            }`}
+                            onClick={() => setSidebarOpen(false)}
+                          >
+                            <subItem.icon size={16} className={`mr-2 ${isActive(subItem.path) ? 'text-blue-600' : subItem.color}`} />
+                            {subItem.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // Regular item
+                  <Link
+                    to={item.path}
+                    className={`sidebar-item ${isActive(item.path) ? 'active' : ''}`}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <item.icon size={20} className={`mr-3 ${isActive(item.path) ? 'text-blue-600' : item.color}`} />
+                    {item.label}
+                  </Link>
+                )}
+              </div>
             ))}
           </nav>
 
