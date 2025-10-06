@@ -1,0 +1,14 @@
+🛠️ Quick Edit Guide:
+
+1. Open the file: src/components/PrintableReportCard.jsx
+2. Find the section you want to edit:
+◦  Header: Lines 62-83 (school name, logo, title)
+◦  Student Info: Lines 85-120 (personal details layout)
+◦  Performance Summary: Lines 122-137 (GPA, attendance boxes)
+◦  Exam Results Table: Lines 139-168 (subject grades table)
+◦  Attendance: Lines 170-202 (attendance charts)
+◦  Daily Exams: Lines 204-221 (daily exam summary)
+◦  Grading Scale: Lines 251-267 (grade legend)
+◦  Footer/Signatures: Lines 269-283 (signature lines)
+3. Make your changes and save the file
+4. Test the PDF by going to Reports → Select Student → Download PDF

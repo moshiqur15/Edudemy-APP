@@ -10,10 +10,12 @@ const api = axios.create({
   },
 });
 
-// Helper function to check if we're in mock mode
+// Helper function to check if we're in mock mode - DISABLED to force real API calls
 const isMockMode = () => {
-  const token = localStorage.getItem('access_token');
-  return token && token.startsWith('mock_token_');
+  // Always return false to disable mock mode and force real backend connections
+  return false;
+  // const token = localStorage.getItem('access_token');
+  // return token && token.startsWith('mock_token_');
 };
 
 // Helper function to generate mock response
@@ -63,21 +65,17 @@ api.interceptors.response.use(
     if (error.isMockMode) {
       const url = error.config.url;
       
-      // Return different mock data based on endpoint
+      // Return empty data for batches and students to force real API calls
       if (url.includes('/batches') || url.includes('getBatches')) {
-        return createMockResponse([
-          { id: 1, name: 'Class 1 - Batch A', class_name: 'Class 1', current_students_count: 25 },
-          { id: 2, name: 'Class 2 - Batch A', class_name: 'Class 2', current_students_count: 30 },
-          { id: 3, name: 'Class 3 - Batch A', class_name: 'Class 3', current_students_count: 28 }
-        ]);
+        return createMockResponse([]);
       }
       
       if (url.includes('/students') || url.includes('getStudents')) {
-        return createMockResponse([
-          { id: 1, full_name: 'John Doe', student_id: 'STU001', class_name: 'Class 1' },
-          { id: 2, full_name: 'Jane Smith', student_id: 'STU002', class_name: 'Class 1' },
-          { id: 3, full_name: 'Mike Johnson', student_id: 'STU003', class_name: 'Class 1' }
-        ]);
+        return createMockResponse([]);
+      }
+      
+      if (url.includes('/teachers') || url.includes('getTeachers')) {
+        return createMockResponse([]);
       }
       
       if (url.includes('/users/me') || url.includes('getCurrentUser')) {

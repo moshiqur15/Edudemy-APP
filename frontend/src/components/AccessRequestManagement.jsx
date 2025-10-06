@@ -21,7 +21,7 @@ import {
   Loader
 } from 'lucide-react';
 
-export default function AccessRequestManagement() {
+export default function AccessRequestManagement({ onRequestProcessed }) {
   const { user, hasRole } = useAuth();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -94,21 +94,34 @@ export default function AccessRequestManagement() {
       setError('');
       console.log('Loading access requests for user:', user.role);
       const response = await accessRequestAPI.getAccessRequests();
-      console.log('Received access requests:', response);
+      console.log('Received access requests response:', response);
+      
+      // Handle different response structures
+      let requestsData = [];
+      if (Array.isArray(response)) {
+        requestsData = response;
+      } else if (response?.data && Array.isArray(response.data)) {
+        requestsData = response.data;
+      } else if (response?.data?.data && Array.isArray(response.data.data)) {
+        requestsData = response.data.data;
+      }
+      
+      console.log('Parsed requests data:', requestsData);
       
       // Superadmin can see all requests, others are filtered by hierarchy
       if (user.role === 'superadmin') {
-        console.log('User is superadmin, showing all requests:', response.length);
-        setRequests(response);
+        console.log('User is superadmin, showing all requests:', requestsData.length);
+        setRequests(requestsData);
       } else {
         // Filter requests based on hierarchy permissions
-        const filteredRequests = response.filter(request => canManageRequest(request.requested_role));
+        const filteredRequests = requestsData.filter(request => canManageRequest(request.requested_role));
         console.log('Filtered requests for', user.role, ':', filteredRequests.length);
         setRequests(filteredRequests);
       }
     } catch (error) {
       console.error('Error loading access requests:', error);
       setError('Failed to load access requests. Please try again.');
+      setRequests([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -126,6 +139,12 @@ export default function AccessRequestManagement() {
       });
       setSuccess('Access request approved successfully!');
       await loadRequests();
+      
+      // Call parent callback to refresh user list
+      if (onRequestProcessed) {
+        onRequestProcessed();
+      }
+      
       setShowDetailModal(false);
     } catch (error) {
       console.error('Error approving request:', error);
@@ -146,6 +165,12 @@ export default function AccessRequestManagement() {
       await accessRequestAPI.rejectRequest(requestId, { reason });
       setSuccess('Access request rejected.');
       await loadRequests();
+      
+      // Call parent callback to refresh user list (in case the user was already created)
+      if (onRequestProcessed) {
+        onRequestProcessed();
+      }
+      
       setShowDetailModal(false);
     } catch (error) {
       console.error('Error rejecting request:', error);

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from .models import UserRole, NotificationType, MessageType, FeedbackType, BehaviorType, Gender, StudentVersion, AccessRequestStatus
+from .models import UserRole, NotificationType, MessageType, FeedbackType, BehaviorType, Gender, StudentVersion, AccessRequestStatus, PaymentType, PaymentStatus, PaymentMethod
 
 class Token(BaseModel):
     access_token: str
@@ -531,22 +531,154 @@ class BehaviorRecordRead(BaseModel):
 class PaymentCreate(BaseModel):
     student_id: int
     amount: float
-    payment_type: str = "fee"
-    payment_method: str = "cash"
+    payment_type: PaymentType = PaymentType.MONTHLY_FEE
+    payment_method: PaymentMethod = PaymentMethod.CASH
     due_date: Optional[datetime] = None
     remarks: Optional[str] = None
+    fee_month: Optional[int] = None
+    fee_year: Optional[int] = None
+    is_admission_complete: bool = False
+
+class PaymentUpdate(BaseModel):
+    amount: Optional[float] = None
+    payment_type: Optional[PaymentType] = None
+    payment_method: Optional[PaymentMethod] = None
+    status: Optional[PaymentStatus] = None
+    remarks: Optional[str] = None
+    fee_month: Optional[int] = None
+    fee_year: Optional[int] = None
 
 class PaymentRead(BaseModel):
     id: int
     student_id: int
     amount: float
-    payment_type: str
-    payment_method: str
+    payment_type: PaymentType
+    payment_method: PaymentMethod
     payment_date: Optional[datetime]
     due_date: Optional[datetime]
-    status: str
+    status: PaymentStatus
     remarks: Optional[str]
     collected_by: Optional[int]
+    receipt_number: Optional[str]
+    fee_month: Optional[int]
+    fee_year: Optional[int]
+    is_admission_complete: bool
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+
+class MonthlyFeeStructureCreate(BaseModel):
+    class_name: str
+    batch_id: Optional[int] = None
+    monthly_fee: float
+    late_fee: float = 0.0
+    discount_percentage: Optional[float] = 0.0
+    effective_from: datetime
+    effective_to: Optional[datetime] = None
+
+class MonthlyFeeStructureRead(BaseModel):
+    id: int
+    class_name: str
+    batch_id: Optional[int]
+    monthly_fee: float
+    late_fee: float
+    discount_percentage: Optional[float]
+    effective_from: datetime
+    effective_to: Optional[datetime]
+    is_active: bool
+    created_by: int
+    created_at: Optional[datetime]
+
+class AdmissionFeeCreate(BaseModel):
+    student_id: int
+    admission_fee_amount: float
+    registration_fee: float = 0.0
+    security_deposit: float = 0.0
+    total_amount: float
+    due_date: Optional[datetime] = None
+
+class AdmissionFeeUpdate(BaseModel):
+    amount_paid: Optional[float] = None
+    status: Optional[PaymentStatus] = None
+
+class AdmissionFeeRead(BaseModel):
+    id: int
+    student_id: int
+    admission_fee_amount: float
+    registration_fee: float
+    security_deposit: float
+    total_amount: float
+    amount_paid: float
+    balance_due: float
+    status: PaymentStatus
+    due_date: Optional[datetime]
+    completion_date: Optional[datetime]
+    processed_by: Optional[int]
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+
+class PaymentReceiptCreate(BaseModel):
+    payment_id: int
+    student_id: int
+    amount_paid: float
+    payment_type: PaymentType
+    payment_method: PaymentMethod
+    payment_date: datetime
+    student_name: str
+    student_reg_number: Optional[str] = None
+    class_name: str
+    batch_name: Optional[str] = None
+    fee_month: Optional[int] = None
+    fee_year: Optional[int] = None
+    fee_description: Optional[str] = None
+    previous_due: float = 0.0
+    current_due: float = 0.0
+
+class PaymentReceiptRead(BaseModel):
+    id: int
+    receipt_number: str
+    payment_id: int
+    student_id: int
+    amount_paid: float
+    payment_type: PaymentType
+    payment_method: PaymentMethod
+    payment_date: datetime
+    student_name: str
+    student_reg_number: Optional[str]
+    class_name: str
+    batch_name: Optional[str]
+    fee_month: Optional[int]
+    fee_year: Optional[int]
+    fee_description: Optional[str]
+    previous_due: float
+    current_due: float
+    generated_by: int
+    generated_at: Optional[datetime]
+    printed_count: int
+
+class StudentDuesRead(BaseModel):
+    id: int
+    student_id: int
+    total_due: float
+    monthly_fee_due: float
+    admission_fee_due: float
+    other_dues: float
+    last_payment_date: Optional[datetime]
+    last_payment_amount: float
+    last_paid_month: Optional[int]
+    last_paid_year: Optional[int]
+    months_pending: int
+    has_overdue: bool
+    needs_attention: bool
+    updated_at: Optional[datetime]
+
+class FinanceDashboardStats(BaseModel):
+    total_monthly_collections: float
+    pending_admissions: int
+    total_dues_outstanding: float
+    overdue_students: int
+    this_month_collections: float
+    last_month_collections: float
+    upcoming_due_dates: int
 
 # Feedback Schemas
 class FeedbackCreate(BaseModel):

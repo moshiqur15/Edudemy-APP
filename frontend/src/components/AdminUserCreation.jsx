@@ -17,7 +17,7 @@ import {
   X
 } from 'lucide-react';
 
-export default function AdminUserCreation() {
+export default function AdminUserCreation({ onUserCreated }) {
   const { user, hasRole } = useAuth();
   const [formData, setFormData] = useState({
     full_name: '',
@@ -133,6 +133,11 @@ export default function AdminUserCreation() {
       const response = await adminAPI.createUser(userData);
       
       setSuccess(`User "${formData.full_name}" created successfully!`);
+      
+      // Call parent callback to refresh user list
+      if (onUserCreated) {
+        onUserCreated();
+      }
       
       // Reset form
       setFormData({

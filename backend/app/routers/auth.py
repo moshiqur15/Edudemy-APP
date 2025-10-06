@@ -224,6 +224,7 @@ def can_manage_role(current_user_role: UserRole, requested_role: UserRole) -> bo
         "superadmin": 6,
         "admin": 5,
         "management": 4,
+        "finance": 4,
         "academics": 3,
         "teacher": 2,
         "student": 1

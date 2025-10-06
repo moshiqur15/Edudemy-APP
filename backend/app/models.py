@@ -7,6 +7,7 @@ class UserRole(str, Enum):
     SUPERADMIN = "superadmin"
     ADMIN = "admin"
     MANAGEMENT = "management"
+    FINANCE = "finance"
     TEACHER = "teacher"
     STUDENT = "student"
     ACADEMICS = "academics"
@@ -137,6 +138,8 @@ class Teacher(SQLModel, table=True):
     user: Optional[User] = Relationship(back_populates='teacher')
     class_assignments: List['ClassAssignment'] = Relationship(back_populates='teacher')
     exam_results: List['ExamResult'] = Relationship(back_populates='teacher')
+    daily_exam_results: List['DailyExamResult'] = Relationship(back_populates='teacher')
+    monthly_exam_results: List['MonthlyExamResult'] = Relationship(back_populates='teacher')
     attendance_records: List['Attendance'] = Relationship(back_populates='teacher')
 
 # Student Version Enum
@@ -192,6 +195,8 @@ class Student(SQLModel, table=True):
     user: Optional[User] = Relationship(back_populates='student')
     batch: Optional['Batch'] = Relationship(back_populates='students')
     exam_results: List['ExamResult'] = Relationship(back_populates='student')
+    daily_exam_results: List['DailyExamResult'] = Relationship(back_populates='student')
+    monthly_exam_results: List['MonthlyExamResult'] = Relationship(back_populates='student')
     attendance_records: List['Attendance'] = Relationship(back_populates='student')
     behavior_records: List['BehaviorRecord'] = Relationship(back_populates='student')
     feedback_submissions: List['FeedbackForm'] = Relationship(back_populates='student')
@@ -344,6 +349,101 @@ class Task(SQLModel, table=True):
         sa_relationship_kwargs={"foreign_keys": "[Task.assigned_to]"}
     )
 
+# Subject structure by class level
+CLASS_SUBJECTS = {
+    "Class 6": ["Bangla", "English", "I.C.T", "Mathematics", "Science", "B.G.S", "Religion"],
+    "Class 7": ["Bangla", "English", "I.C.T", "Mathematics", "Science", "B.G.S", "Religion"],
+    "Class 8": ["Bangla", "English", "I.C.T", "Mathematics", "Science", "B.G.S", "Religion"],
+    "Class 9": ["Bangla", "English", "I.C.T", "Mathematics", "Higher Mathematics", "Physics", "Chemistry", "Biology"],
+    "Class 10": ["Bangla", "English", "I.C.T", "Mathematics", "Higher Mathematics", "Physics", "Chemistry", "Biology"],
+    "SSC": ["Bangla", "English", "I.C.T", "Mathematics", "Higher Mathematics", "Physics", "Chemistry", "Biology"],
+    "HSC 1st Year": ["Higher Mathematics", "Physics", "Chemistry", "Biology"],
+    "HSC 2nd Year": ["Higher Mathematics", "Physics", "Chemistry", "Biology"],
+    "Class 11": ["Higher Mathematics", "Physics", "Chemistry", "Biology"],
+    "Class 12": ["Higher Mathematics", "Physics", "Chemistry", "Biology"]
+}
+
+# Exam Types
+class ExamType(str, Enum):
+    DAILY = "daily"
+    MONTHLY = "monthly"
+    MIDTERM = "midterm"
+    FINAL = "final"
+    QUIZ = "quiz"
+
+# Daily Exam Model (for daily marks, usually 8 exams per subject per month)
+class DailyExam(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    subject: str
+    class_name: str  # e.g., "Class 10", "HSC 1st Year"
+    batch_id: Optional[int] = Field(default=None, foreign_key='batch.id')
+    exam_date: datetime
+    max_marks: float = 10.0  # Usually daily exams are out of 10
+    exam_type: ExamType = ExamType.DAILY
+    month: int  # Month number (1-12)
+    year: int
+    created_by: int = Field(foreign_key='user.id')
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    results: List['DailyExamResult'] = Relationship(back_populates='exam')
+
+# Daily Exam Results
+class DailyExamResult(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    exam_id: int = Field(foreign_key='dailyexam.id')
+    student_id: int = Field(foreign_key='student.id')
+    teacher_id: int = Field(foreign_key='teacher.id')  # Who entered the marks
+    marks_obtained: float
+    grade: Optional[str] = None  # A+, A, A-, B+, etc.
+    percentage: Optional[float] = None
+    remarks: Optional[str] = None
+    entered_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    exam: Optional[DailyExam] = Relationship(back_populates='results')
+    student: Optional[Student] = Relationship(back_populates='daily_exam_results')
+    teacher: Optional[Teacher] = Relationship(back_populates='daily_exam_results')
+
+# Monthly Exam Model (1 mega exam per subject each month)
+class MonthlyExam(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str  # e.g., "January Monthly Exam - Mathematics"
+    subject: str
+    class_name: str
+    batch_id: Optional[int] = Field(default=None, foreign_key='batch.id')
+    exam_date: datetime
+    max_marks: float = 100.0  # Monthly exams usually out of 100
+    duration_minutes: int = 120  # 2 hours typically
+    exam_type: ExamType = ExamType.MONTHLY
+    month: int  # Month number (1-12)
+    year: int
+    syllabus_covered: Optional[str] = None  # What topics were covered
+    created_by: int = Field(foreign_key='user.id')
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    results: List['MonthlyExamResult'] = Relationship(back_populates='exam')
+
+# Monthly Exam Results
+class MonthlyExamResult(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    exam_id: int = Field(foreign_key='monthlyexam.id')
+    student_id: int = Field(foreign_key='student.id')
+    teacher_id: int = Field(foreign_key='teacher.id')  # Who entered the marks
+    marks_obtained: float
+    grade: Optional[str] = None  # A+, A, A-, B+, etc.
+    percentage: Optional[float] = None
+    position_in_class: Optional[int] = None  # Rank in class
+    remarks: Optional[str] = None
+    entered_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    exam: Optional[MonthlyExam] = Relationship(back_populates='results')
+    student: Optional[Student] = Relationship(back_populates='monthly_exam_results')
+    teacher: Optional[Teacher] = Relationship(back_populates='monthly_exam_results')
+
 # Academic Management Models
 class Exam(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -402,20 +502,162 @@ class BehaviorRecord(SQLModel, table=True):
     student: Optional[Student] = Relationship(back_populates='behavior_records')
 
 # Payment System
+class PaymentType(str, Enum):
+    MONTHLY_FEE = "monthly_fee"
+    ADMISSION_FEE = "admission_fee"
+    EXAM_FEE = "exam_fee"
+    FINE = "fine"
+    OTHER = "other"
+
+class PaymentStatus(str, Enum):
+    PENDING = "pending"
+    PARTIAL = "partial"
+    PAID = "paid"
+    OVERDUE = "overdue"
+    CANCELLED = "cancelled"
+
+class PaymentMethod(str, Enum):
+    CASH = "cash"
+    CARD = "card"
+    BANK_TRANSFER = "bank_transfer"
+    ONLINE = "online"
+    MOBILE_BANKING = "mobile_banking"
+
 class Payment(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     student_id: int = Field(foreign_key='student.id')
     amount: float
-    payment_type: str = "fee"  # fee, fine, other
-    payment_method: str = "cash"  # cash, card, online
+    payment_type: PaymentType = PaymentType.MONTHLY_FEE
+    payment_method: PaymentMethod = PaymentMethod.CASH
     payment_date: Optional[datetime] = Field(default_factory=datetime.utcnow)
     due_date: Optional[datetime] = None
-    status: str = "paid"  # pending, paid, overdue
+    status: PaymentStatus = PaymentStatus.PAID
     remarks: Optional[str] = None
     collected_by: Optional[int] = Field(default=None, foreign_key='user.id')
+    receipt_number: Optional[str] = None  # Auto-generated receipt number
+    
+    # Month/Year for monthly fees
+    fee_month: Optional[int] = None  # 1-12
+    fee_year: Optional[int] = None
+    
+    # Admission specific fields
+    is_admission_complete: bool = False  # For admission fee tracking
+    
+    # Metadata
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
     
     # Relationships
     student: Optional[Student] = Relationship(back_populates='payments')
+    receipts: List['PaymentReceipt'] = Relationship(back_populates='payment')
+
+class MonthlyFeeStructure(SQLModel, table=True):
+    """Monthly fee structure for different classes/batches"""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    class_name: str  # e.g., "Class 10", "HSC 1st Year"
+    batch_id: Optional[int] = Field(default=None, foreign_key='batch.id')
+    monthly_fee: float
+    late_fee: float = 0.0
+    discount_percentage: Optional[float] = 0.0
+    effective_from: datetime
+    effective_to: Optional[datetime] = None
+    is_active: bool = True
+    created_by: int = Field(foreign_key='user.id')
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    batch: Optional['Batch'] = Relationship()
+
+class AdmissionFee(SQLModel, table=True):
+    """Admission fee tracking for new students"""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    student_id: int = Field(foreign_key='student.id')
+    admission_fee_amount: float
+    registration_fee: float = 0.0
+    security_deposit: float = 0.0
+    total_amount: float
+    amount_paid: float = 0.0
+    balance_due: float
+    
+    status: PaymentStatus = PaymentStatus.PENDING
+    due_date: Optional[datetime] = None
+    completion_date: Optional[datetime] = None  # When fully paid
+    
+    # Metadata
+    processed_by: Optional[int] = Field(default=None, foreign_key='user.id')
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    student: Optional[Student] = Relationship()
+    payments: List['Payment'] = Relationship(sa_relationship_kwargs={"primaryjoin": "and_(AdmissionFee.student_id == Payment.student_id, Payment.payment_type == 'admission_fee')", "foreign_keys": "[Payment.student_id]", "viewonly": True})
+
+class PaymentReceipt(SQLModel, table=True):
+    """Payment receipts for record keeping and printing"""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    receipt_number: str = Field(unique=True)  # Auto-generated
+    payment_id: int = Field(foreign_key='payment.id')
+    student_id: int = Field(foreign_key='student.id')
+    
+    # Receipt details
+    amount_paid: float
+    payment_type: PaymentType
+    payment_method: PaymentMethod
+    payment_date: datetime
+    
+    # Student info snapshot (for receipt printing)
+    student_name: str
+    student_reg_number: Optional[str] = None
+    class_name: str
+    batch_name: Optional[str] = None
+    
+    # Fee period info
+    fee_month: Optional[int] = None
+    fee_year: Optional[int] = None
+    fee_description: Optional[str] = None  # "Monthly Fee for January 2024"
+    
+    # Balance info
+    previous_due: float = 0.0
+    current_due: float = 0.0
+    
+    # Receipt metadata
+    generated_by: int = Field(foreign_key='user.id')
+    generated_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    printed_count: int = 0  # Track how many times printed
+    
+    # Relationships
+    payment: Optional[Payment] = Relationship(back_populates='receipts')
+    student: Optional[Student] = Relationship()
+
+class StudentDues(SQLModel, table=True):
+    """Track student dues summary for quick access"""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    student_id: int = Field(foreign_key='student.id', unique=True)
+    
+    # Current dues
+    total_due: float = 0.0
+    monthly_fee_due: float = 0.0
+    admission_fee_due: float = 0.0
+    other_dues: float = 0.0
+    
+    # Last payment info
+    last_payment_date: Optional[datetime] = None
+    last_payment_amount: float = 0.0
+    
+    # Fee month tracking
+    last_paid_month: Optional[int] = None
+    last_paid_year: Optional[int] = None
+    months_pending: int = 0
+    
+    # Summary flags
+    has_overdue: bool = False
+    needs_attention: bool = False
+    
+    # Metadata
+    updated_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    student: Optional[Student] = Relationship()
 
 # Feedback System
 class FeedbackForm(SQLModel, table=True):

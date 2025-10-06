@@ -95,6 +95,7 @@ export default function Layout({ children }) {
   const getNavItems = () => {
     const baseItems = [
       { path: '/profile', icon: User, label: 'Profile', color: 'text-green-600' },
+      { path: '/settings', icon: Settings, label: 'Settings', color: 'text-gray-600' },
     ];
 
     // Define all possible navigation items with their required permissions
@@ -123,8 +124,7 @@ export default function Layout({ children }) {
       { path: '/admin/reports', icon: FileText, label: 'Reports', color: 'text-purple-600', permission: 'reports', roles: ['superadmin', 'admin', 'management', 'academics'] },
       { path: '/admin/tasks', icon: ClipboardList, label: 'Task Management', color: 'text-green-600', permission: 'tasks', roles: ['superadmin', 'admin', 'management'] },
       { path: '/admin/feedback', icon: Star, label: 'Feedback', color: 'text-pink-600', permission: 'feedback', roles: ['superadmin', 'admin', 'management', 'student'] },
-      { path: '/admin/permissions', icon: Shield, label: 'Permissions', color: 'text-red-500', permission: 'permissions', roles: ['superadmin', 'admin'] },
-      { path: '/admin/settings', icon: Settings, label: 'Settings', color: 'text-gray-600', permission: 'settings', roles: ['superadmin', 'admin'] },
+      { path: '/finance', icon: DollarSign, label: 'Finance', color: 'text-green-600', permission: 'finance', roles: ['superadmin', 'admin', 'finance'] },
     ];
 
     // Filter items based on user's permissions and role

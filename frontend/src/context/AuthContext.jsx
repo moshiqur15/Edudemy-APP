@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { authAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -15,37 +16,43 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     setLoading(true);
     
-    // Simple mock authentication
-    const mockUsers = {
-      superadmin: { id: 0, username: 'superadmin', role: 'superadmin', email: 'superadmin@edudemy.com', full_name: 'Super Administrator' },
-      admin: { id: 1, username: 'admin', role: 'admin', email: 'admin@edudemy.com', full_name: 'System Administrator' },
-      teacher: { id: 2, username: 'teacher', role: 'teacher', email: 'teacher@edudemy.com', full_name: 'Demo Teacher' },
-      student: { id: 3, username: 'student', role: 'student', email: 'student@edudemy.com', full_name: 'Demo Student' },
-      management: { id: 4, username: 'management', role: 'management', email: 'management@edudemy.com', full_name: 'Demo Management' },
-      academics: { id: 5, username: 'academics', role: 'academics', email: 'academics@edudemy.com', full_name: 'Demo Academics' }
-    };
-    
-    const mockUser = mockUsers[username.toLowerCase()];
-    const validPasswords = ['admin123', 'teacher123', 'student123', 'demo123', 'super123'];
-    
-    if (mockUser && validPasswords.includes(password)) {
-      const userData = mockUser;
-      const access_token = 'mock_token_' + Date.now();
+    try {
+      // Call real backend API for authentication
+      const response = await authAPI.login({ username, password });
       
-      // Store token and user data
-      localStorage.setItem('access_token', access_token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      
-      // Navigate based on role
-      const redirectPath = getRedirectPath(userData.role);
-      navigate(redirectPath, { replace: true });
-      
+      if (response && response.access_token) {
+        const { access_token, user: userData } = response;
+        
+        // Store token and user data
+        localStorage.setItem('access_token', access_token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+        
+        // Navigate based on role
+        const redirectPath = getRedirectPath(userData.role.toLowerCase());
+        navigate(redirectPath, { replace: true });
+        
+        setLoading(false);
+        return { success: true };
+      } else {
+        setLoading(false);
+        return { success: false, error: 'Invalid response from server' };
+      }
+    } catch (error) {
       setLoading(false);
-      return { success: true };
-    } else {
-      setLoading(false);
-      return { success: false, error: 'Invalid demo credentials' };
+      console.error('Login error:', error);
+      
+      // Handle different error types
+      if (error.response?.status === 400) {
+        const errorMessage = error.response.data?.detail || 'Invalid credentials';
+        return { success: false, error: errorMessage };
+      } else if (error.response?.status === 500) {
+        return { success: false, error: 'Server error. Please try again later.' };
+      } else if (error.code === 'ECONNREFUSED' || error.message === 'Network Error') {
+        return { success: false, error: 'Cannot connect to server. Please ensure the backend is running.' };
+      } else {
+        return { success: false, error: 'Login failed. Please try again.' };
+      }
     }
   };
 

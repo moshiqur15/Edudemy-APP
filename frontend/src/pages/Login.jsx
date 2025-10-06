@@ -197,36 +197,21 @@ export default function Login() {
               </p>
             </div>
             
-            {/* Demo Credentials */}
+            {/* Login Credentials */}
             <div className="mt-8 pt-6 border-t border-gray-200">
-              <p className="text-sm text-gray-600 text-center mb-3">Demo Credentials (Development Mode):</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                <div className="bg-red-50 p-2 rounded-md">
-                  <p className="font-semibold text-red-800">Super Admin</p>
-                  <p className="text-red-600">superadmin / super123</p>
-                </div>
-                <div className="bg-blue-50 p-2 rounded-md">
-                  <p className="font-semibold text-blue-800">Admin</p>
-                  <p className="text-blue-600">admin / admin123</p>
-                </div>
-                <div className="bg-green-50 p-2 rounded-md">
-                  <p className="font-semibold text-green-800">Teacher</p>
-                  <p className="text-green-600">teacher / teacher123</p>
+              <p className="text-sm text-gray-600 text-center mb-3">Available Login Credentials:</p>
+              <div className="text-center">
+                <div className="bg-green-50 border border-green-200 p-4 rounded-md">
+                  <p className="font-semibold text-green-800 mb-1">Super Administrator</p>
+                  <p className="text-green-600 font-mono text-sm">superadmin@edudemy.com</p>
+                  <p className="text-green-600 font-mono text-sm">superadmin123</p>
+                  <p className="text-xs text-green-500 mt-2">Full system access</p>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs mt-2">
-                <div className="bg-purple-50 p-2 rounded-md">
-                  <p className="font-semibold text-purple-800">Student</p>
-                  <p className="text-purple-600">student / student123</p>
-                </div>
-                <div className="bg-orange-50 p-2 rounded-md">
-                  <p className="font-semibold text-orange-800">Management</p>
-                  <p className="text-orange-600">management / demo123</p>
-                </div>
-                <div className="bg-indigo-50 p-2 rounded-md">
-                  <p className="font-semibold text-indigo-800">Academics</p>
-                  <p className="text-indigo-600">academics / demo123</p>
-                </div>
+              <div className="text-center mt-3">
+                <p className="text-xs text-gray-500">
+                  Note: Other user accounts can be created through the User Management interface
+                </p>
               </div>
             </div>
           </div>

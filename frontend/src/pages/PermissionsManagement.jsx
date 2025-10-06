@@ -82,6 +82,15 @@ export default function PermissionsManagement() {
       level: 3
     },
     { 
+      value: 'finance', 
+      label: 'Finance', 
+      color: 'text-green-600 bg-green-100',
+      icon: DollarSign,
+      description: 'Finance management with fee collection and payments',
+      permissions: ['Fee Collection', 'Admission Processing', 'Payment Management', 'Financial Reports'],
+      level: 3
+    },
+    { 
       value: 'teacher', 
       label: 'Teacher', 
       color: 'text-green-600 bg-green-100',
@@ -123,6 +132,14 @@ export default function PermissionsManagement() {
       'Student Admission',
       'Teacher Assignment',
       'Batch Management'
+    ],
+    'finance': [
+      'Fee Collection Management',
+      'Admission Fee Processing',
+      'Payment Receipt Generation',
+      'Student Dues Tracking',
+      'Financial Reports',
+      'Payment Method Management'
     ],
     'teacher': [
       'Manage Own Classes',

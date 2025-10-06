@@ -3,23 +3,21 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
+import "./debug.js";
 import { AuthProvider } from "./context/AuthContext";
 import { NotificationProvider } from "./context/NotificationContext";
 import { PermissionsProvider } from "./hooks/usePermissions";
-import { ThemeProvider } from "./context/ThemeContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          <PermissionsProvider>
-            <NotificationProvider>
-              <App />
-            </NotificationProvider>
-          </PermissionsProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <PermissionsProvider>
+          <NotificationProvider>
+            <App />
+          </NotificationProvider>
+        </PermissionsProvider>
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

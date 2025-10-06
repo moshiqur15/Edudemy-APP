@@ -39,7 +39,6 @@ import {
   Gamepad2,
   Book,
   Palette,
-  Settings,
   Bell,
   Download,
   Share2,
@@ -482,8 +481,7 @@ export default function ProfileEnhanced() {
     { id: 'personal', label: 'Personal Info', icon: FileText },
     { id: 'academic', label: 'Academic Info', icon: GraduationCap },
     { id: 'achievements', label: 'Achievements', icon: Award },
-    { id: 'activity', label: 'Activity', icon: Activity },
-    { id: 'settings', label: 'Settings', icon: Settings }
+    { id: 'activity', label: 'Activity', icon: Activity }
   ];
 
   const interests = [
@@ -1409,94 +1407,6 @@ export default function ProfileEnhanced() {
     </div>
   );
 
-  const renderSettingsTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-          <Settings size={20} className="mr-2 text-gray-600" />
-          Profile Settings
-        </h3>
-        
-        <div className="space-y-6">
-          {/* Privacy Settings */}
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Privacy Settings</h4>
-            <div className="space-y-3">
-              <label className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-700">Public Profile</div>
-                  <div className="text-sm text-gray-500">Allow others to view your profile</div>
-                </div>
-                <input type="checkbox" className="toggle" defaultChecked />
-              </label>
-              
-              <label className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-700">Show Email</div>
-                  <div className="text-sm text-gray-500">Display your email on public profile</div>
-                </div>
-                <input type="checkbox" className="toggle" />
-              </label>
-              
-              <label className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-700">Show Phone</div>
-                  <div className="text-sm text-gray-500">Display your phone number on profile</div>
-                </div>
-                <input type="checkbox" className="toggle" />
-              </label>
-            </div>
-          </div>
-
-          {/* Notification Settings */}
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Notification Preferences</h4>
-            <div className="space-y-3">
-              <label className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-700">Email Notifications</div>
-                  <div className="text-sm text-gray-500">Receive updates via email</div>
-                </div>
-                <input type="checkbox" className="toggle" defaultChecked />
-              </label>
-              
-              <label className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-700">Achievement Alerts</div>
-                  <div className="text-sm text-gray-500">Get notified about new achievements</div>
-                </div>
-                <input type="checkbox" className="toggle" defaultChecked />
-              </label>
-              
-              <label className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-700">Weekly Summary</div>
-                  <div className="text-sm text-gray-500">Receive weekly activity summary</div>
-                </div>
-                <input type="checkbox" className="toggle" />
-              </label>
-            </div>
-          </div>
-
-          {/* Data Export */}
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Data Management</h4>
-            <div className="space-y-3">
-              <button className="flex items-center text-blue-600 hover:text-blue-800">
-                <Download size={16} className="mr-2" />
-                Export Profile Data
-              </button>
-              
-              <button className="flex items-center text-blue-600 hover:text-blue-800">
-                <Share2 size={16} className="mr-2" />
-                Generate Profile URL
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1583,7 +1493,6 @@ export default function ProfileEnhanced() {
           {activeTab === 'academic' && renderAcademicInfoTab()}
           {activeTab === 'achievements' && renderAchievementsTab()}
           {activeTab === 'activity' && renderActivityTab()}
-          {activeTab === 'settings' && renderSettingsTab()}
         </div>
       </div>
 

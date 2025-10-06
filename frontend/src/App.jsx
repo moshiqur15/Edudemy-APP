@@ -2,7 +2,6 @@ import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { useRoutePreloader } from "./utils/RoutePreloader.jsx";
-import logger from "./utils/logger";
 
 // Core components (loaded immediately)
 import Layout from "./components/Layout";
@@ -27,6 +26,7 @@ const DashboardAdmin = React.lazy(() => import("./pages/DashboardAdmin"));
 const DashboardTeacher = React.lazy(() => import("./pages/DashboardTeacher"));
 const DashboardStudent = React.lazy(() => import("./pages/DashboardStudent"));
 const DashboardManagement = React.lazy(() => import("./pages/DashboardManagement"));
+const DashboardFinance = React.lazy(() => import("./pages/DashboardFinance"));
 const DashboardAcademics = React.lazy(() => import("./pages/DashboardAcademics"));
 
 // Communication features
@@ -42,7 +42,6 @@ const AttendancePage = React.lazy(() => import("./pages/student/AttendancePage")
 const Students = React.lazy(() => import("./pages/Students"));
 const Teachers = React.lazy(() => import("./pages/Teachers"));
 const UserManagement = React.lazy(() => import("./pages/UserManagement"));
-const Permissions = React.lazy(() => import("./pages/Permissions"));
 
 // Academic management
 const Batches = React.lazy(() => import("./pages/Batches"));
@@ -58,6 +57,9 @@ const ExamManagement = React.lazy(() => import("./pages/ExamManagement"));
 // Common features
 const Profile = React.lazy(() => import("./pages/Profile"));
 const Settings = React.lazy(() => import("./pages/Settings"));
+const TaskManagement = React.lazy(() => import("./pages/TaskManagement"));
+const Reports = React.lazy(() => import("./pages/Reports"));
+const Finance = React.lazy(() => import("./pages/Finance"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 
 // Helper function to create lazy route elements
@@ -83,6 +85,7 @@ export default function App() {
   
   // Initialize route preloading for better performance
   useRoutePreloader();
+  
 
   // Show loading spinner while authentication is being checked
   if (loading) {
@@ -105,6 +108,8 @@ export default function App() {
         return "/admin";
       case 'management':
         return "/management";
+      case 'finance':
+        return "/finance";
       case 'academics':
         return "/academics";
       case 'teacher':
@@ -116,9 +121,10 @@ export default function App() {
     }
   };
 
+
   return (
     <ErrorBoundary>
-      <Suspense fallback={<PageLoader />}>
+      <div style={{minHeight: '100vh', background: 'white'}}>
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
@@ -214,6 +220,13 @@ export default function App() {
                 </Suspense>
               </Layout>
             } />
+            <Route path="/admin/reports" element={
+              <Layout>
+                <Suspense fallback={<PageLoader message="Loading Reports..." />}>
+                  <Reports />
+                </Suspense>
+              </Layout>
+            } />
             <Route path="/admin/feedback" element={
               <Layout>
                 <Suspense fallback={<PageLoader message="Loading Feedback..." />}>
@@ -221,13 +234,22 @@ export default function App() {
                 </Suspense>
               </Layout>
             } />
-            <Route path="/admin/permissions" element={
+            <Route path="/admin/tasks" element={
               <Layout>
-                <Suspense fallback={<PageLoader message="Loading Permissions..." />}>
-                  <Permissions />
+                <Suspense fallback={<PageLoader message="Loading Task Management..." />}>
+                  <TaskManagement />
                 </Suspense>
               </Layout>
             } />
+          </Route>
+
+          {/* Finance Routes */}
+          <Route element={<ProtectedRoute requireRole={["superadmin", "admin", "finance"]} />}>
+            <Route path="/finance" element={createLazyRoute(Finance, "Loading Finance...")} />
+            <Route path="/finance/dashboard" element={createLazyRoute(DashboardFinance, "Loading Finance Dashboard...")} />
+            <Route path="/finance/fee-collection" element={createLazyRoute(Finance, "Loading Fee Collection...")} />
+            <Route path="/finance/admission-fee" element={createLazyRoute(Finance, "Loading Admission Fee Collection...")} />
+            <Route path="/finance/payment-sheet" element={createLazyRoute(Finance, "Loading Payment Sheet...")} />
           </Route>
 
           {/* Management Routes */}
@@ -238,6 +260,7 @@ export default function App() {
             <Route path="/management/gradebook" element={createLazyRoute(GradeBook, "Loading Grade Book...")} />
             <Route path="/management/exams" element={createLazyRoute(ExamManagement, "Loading Exam Management...")} />
             <Route path="/management/feedback" element={createLazyRoute(Feedback, "Loading Feedback...")} />
+            <Route path="/management/tasks" element={createLazyRoute(TaskManagement, "Loading Task Management...")} />
           </Route>
 
           {/* Academics Routes */}
@@ -248,6 +271,7 @@ export default function App() {
             <Route path="/academics/attendance" element={createLazyRoute(Attendance, "Loading Attendance...")} />
             <Route path="/academics/gradebook" element={createLazyRoute(GradeBook, "Loading Grade Book...")} />
             <Route path="/academics/exams" element={createLazyRoute(ExamManagement, "Loading Exam Management...")} />
+            <Route path="/academics/tasks" element={createLazyRoute(TaskManagement, "Loading Task Management...")} />
           </Route>
 
           {/* Teacher Routes */}
@@ -257,6 +281,7 @@ export default function App() {
             <Route path="/teacher/attendance" element={createLazyRoute(Attendance, "Loading Attendance...")} />
             <Route path="/teacher/gradebook" element={createLazyRoute(GradeBook, "Loading Grade Book...")} />
             <Route path="/teacher/exams" element={createLazyRoute(ExamManagement, "Loading Exam Management...")} />
+            <Route path="/teacher/tasks" element={createLazyRoute(TaskManagement, "Loading Task Management...")} />
           </Route>
 
           {/* Student Routes */}
@@ -273,6 +298,7 @@ export default function App() {
             <Route path="/notifications" element={createLazyRoute(NotificationsPage, "Loading Notifications...")} />
             <Route path="/profile" element={createLazyRoute(Profile, "Loading Profile...")} />
             <Route path="/settings" element={createLazyRoute(Settings, "Loading Settings...")} />
+            <Route path="/tasks" element={createLazyRoute(TaskManagement, "Loading Task Management...")} />
           </Route>
 
           {/* Fallback Routes */}
@@ -283,7 +309,7 @@ export default function App() {
             </Suspense>
           } />
         </Routes>
-      </Suspense>
+      </div>
     </ErrorBoundary>
   );
 }
