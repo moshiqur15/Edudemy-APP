@@ -1,0 +1,19 @@
+{
+  "timestamp": "2025-10-12T00:04:09.741763",
+  "system_status": "OPERATIONAL",
+  "database": {
+    "total_students": 200,
+    "total_batches": 2,
+    "analytics_records": 3,
+    "analytics_coverage": "1.5%"
+  },
+  "analytics_engine": {
+    "status": "Working",
+    "ml_model_ready": true,
+    "fifa_ratings_available": true
+  },
+  "api_server": {
+    "tested": "Yes",
+    "endpoints_verified": "Multiple"
+  }
+}

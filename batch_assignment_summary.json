@@ -1,0 +1,62 @@
+{
+  "batch_distribution": [
+    {
+      "class_name": "Class 10",
+      "total_batches": 2,
+      "total_students": 32,
+      "active_batches": 2,
+      "avg_students_per_batch": 16.0
+    },
+    {
+      "class_name": "Class 6",
+      "total_batches": 4,
+      "total_students": 34,
+      "active_batches": 4,
+      "avg_students_per_batch": 8.5
+    },
+    {
+      "class_name": "Class 7",
+      "total_batches": 2,
+      "total_students": 26,
+      "active_batches": 2,
+      "avg_students_per_batch": 13.0
+    },
+    {
+      "class_name": "Class 8",
+      "total_batches": 2,
+      "total_students": 29,
+      "active_batches": 2,
+      "avg_students_per_batch": 14.5
+    },
+    {
+      "class_name": "Class 9",
+      "total_batches": 2,
+      "total_students": 30,
+      "active_batches": 2,
+      "avg_students_per_batch": 15.0
+    },
+    {
+      "class_name": "HSC 1st Year",
+      "total_batches": 2,
+      "total_students": 22,
+      "active_batches": 2,
+      "avg_students_per_batch": 11.0
+    },
+    {
+      "class_name": "HSC 2nd Year",
+      "total_batches": 2,
+      "total_students": 27,
+      "active_batches": 2,
+      "avg_students_per_batch": 13.5
+    },
+    {
+      "class_name": "SSC",
+      "total_batches": 2,
+      "total_students": 0,
+      "active_batches": 2,
+      "avg_students_per_batch": 0
+    }
+  ],
+  "unassigned_summary": [],
+  "total_unassigned": 0
+}

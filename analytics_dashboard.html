@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edudemy Analytics Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border: 1px solid #e1e8ed;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .card h3 {
+            color: #4a5568;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            font-size: 1.3rem;
+        }
+
+        .card h3 .emoji {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #718096;
+            margin-top: 0.25rem;
+        }
+
+        .students-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .student-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+            transition: background-color 0.2s;
+        }
+
+        .student-item:hover {
+            background-color: #f8fafc;
+        }
+
+        .student-item:last-child {
+            border-bottom: none;
+        }
+
+        .student-name {
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .student-class {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .fifa-rating {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .risk-level {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .risk-low { background: #c6f6d5; color: #22543d; }
+        .risk-medium { background: #fed7aa; color: #c05621; }
+        .risk-high { background: #fed7d7; color: #c53030; }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .batch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .batch-item {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #48bb78;
+        }
+
+        .batch-name {
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+
+        .batch-stats {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎓 Edudemy Analytics Dashboard</h1>
+        <p>FIFA-Style Student Performance Analytics & ML Insights</p>
+    </div>
+
+    <div class="container">
+        <!-- Overview Cards -->
+        <div class="dashboard-grid">
+            <div class="card">
+                <h3><span class="emoji">📊</span> Overview</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value" id="total-students">-</span>
+                        <span class="stat-label">Total Students</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="total-batches">-</span>
+                        <span class="stat-label">Total Batches</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="avg-rating">-</span>
+                        <span class="stat-label">Avg FIFA Rating</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="analytics-calculated">-</span>
+                        <span class="stat-label">Analytics Records</span>
+                    </div>
+                </div>
+                <button class="btn" onclick="refreshDashboard()">🔄 Refresh Data</button>
+            </div>
+
+            <div class="card">
+                <h3><span class="emoji">⚠️</span> Risk Distribution</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value risk-low" id="risk-low">-</span>
+                        <span class="stat-label">Low Risk</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value risk-medium" id="risk-medium">-</span>
+                        <span class="stat-label">Medium Risk</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value risk-high" id="risk-high">-</span>
+                        <span class="stat-label">High Risk</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="risk-total">-</span>
+                        <span class="stat-label">Total</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><span class="emoji">🎯</span> Analytics Settings</h3>
+                <div id="analytics-settings" class="loading">Loading settings...</div>
+            </div>
+        </div>
+
+        <!-- Students Section -->
+        <div class="dashboard-grid">
+            <div class="card">
+                <h3><span class="emoji">👥</span> Recent Students</h3>
+                <div id="recent-students" class="students-list loading">Loading students...</div>
+            </div>
+
+            <div class="card">
+                <h3><span class="emoji">📚</span> Batches Overview</h3>
+                <div id="batches-overview" class="loading">Loading batches...</div>
+            </div>
+
+            <div class="card">
+                <h3><span class="emoji">🏆</span> Top Performers</h3>
+                <div id="top-performers" class="students-list loading">Loading top performers...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8001';
+
+        // Fetch dashboard data
+        async function fetchDashboardData() {
+            try {
+                const response = await fetch(`${API_BASE}/analytics/dashboard`);
+                if (!response.ok) throw new Error('Failed to fetch dashboard data');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+                throw error;
+            }
+        }
+
+        // Fetch students data
+        async function fetchStudents() {
+            try {
+                const response = await fetch(`${API_BASE}/students?limit=20`);
+                if (!response.ok) throw new Error('Failed to fetch students');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching students:', error);
+                return [];
+            }
+        }
+
+        // Fetch student analytics
+        async function fetchStudentAnalytics(studentId) {
+            try {
+                const response = await fetch(`${API_BASE}/students/${studentId}/analytics`);
+                if (!response.ok) return null;
+                return await response.json();
+            } catch (error) {
+                console.error(`Error fetching analytics for student ${studentId}:`, error);
+                return null;
+            }
+        }
+
+        // Fetch batches data
+        async function fetchBatches() {
+            try {
+                const response = await fetch(`${API_BASE}/batches`);
+                if (!response.ok) throw new Error('Failed to fetch batches');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching batches:', error);
+                return [];
+            }
+        }
+
+        // Fetch analytics settings
+        async function fetchAnalyticsSettings() {
+            try {
+                const response = await fetch(`${API_BASE}/analytics/settings`);
+                if (!response.ok) throw new Error('Failed to fetch settings');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching analytics settings:', error);
+                return null;
+            }
+        }
+
+        // Update dashboard overview
+        function updateOverview(data) {
+            document.getElementById('total-students').textContent = data.overview.total_students;
+            document.getElementById('total-batches').textContent = data.overview.total_batches;
+            document.getElementById('avg-rating').textContent = data.overview.average_fifa_rating || 'N/A';
+            document.getElementById('analytics-calculated').textContent = data.overview.analytics_calculated;
+
+            // Risk distribution
+            const risk = data.risk_distribution;
+            document.getElementById('risk-low').textContent = risk.low;
+            document.getElementById('risk-medium').textContent = risk.medium;
+            document.getElementById('risk-high').textContent = risk.high;
+            document.getElementById('risk-total').textContent = risk.low + risk.medium + risk.high;
+        }
+
+        // Update recent students
+        function updateRecentStudents(students) {
+            const container = document.getElementById('recent-students');
+            
+            if (students.length === 0) {
+                container.innerHTML = '<p class="loading">No students found</p>';
+                return;
+            }
+
+            const studentsHtml = students.map(student => `
+                <div class="student-item">
+                    <div>
+                        <div class="student-name">${student.full_name || student.name}</div>
+                        <div class="student-class">${student.class_name} • ID: ${student.id}</div>
+                    </div>
+                    <button class="btn" onclick="viewStudentAnalytics(${student.id})">View Analytics</button>
+                </div>
+            `).join('');
+
+            container.innerHTML = studentsHtml;
+        }
+
+        // Update batches overview
+        function updateBatchesOverview(batches) {
+            const container = document.getElementById('batches-overview');
+            
+            if (batches.length === 0) {
+                container.innerHTML = '<p class="loading">No batches found</p>';
+                return;
+            }
+
+            const batchesHtml = `
+                <div class="batch-grid">
+                    ${batches.map(batch => `
+                        <div class="batch-item">
+                            <div class="batch-name">${batch.name}</div>
+                            <div class="batch-stats">
+                                ${batch.current_students_count}/${batch.max_students} students<br>
+                                Status: ${batch.status}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            container.innerHTML = batchesHtml;
+        }
+
+        // Update analytics settings
+        function updateAnalyticsSettings(settings) {
+            const container = document.getElementById('analytics-settings');
+            
+            if (!settings) {
+                container.innerHTML = '<p class="error">Failed to load settings</p>';
+                return;
+            }
+
+            const settingsHtml = `
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value">${(settings.attendance_weight * 100).toFixed(0)}%</span>
+                        <span class="stat-label">Attendance</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${(settings.homework_classwork_weight * 100).toFixed(0)}%</span>
+                        <span class="stat-label">Homework</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${(settings.exam_weight * 100).toFixed(0)}%</span>
+                        <span class="stat-label">Exams</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${(settings.skills_weight * 100).toFixed(0)}%</span>
+                        <span class="stat-label">Skills</span>
+                    </div>
+                </div>
+                <p style="margin-top: 1rem; font-size: 0.9rem; color: #718096;">
+                    Period: ${settings.calculation_period_days} days
+                </p>
+            `;
+
+            container.innerHTML = settingsHtml;
+        }
+
+        // View student analytics
+        async function viewStudentAnalytics(studentId) {
+            try {
+                const analytics = await fetchStudentAnalytics(studentId);
+                if (analytics) {
+                    alert(`Analytics for ${analytics.student_name}:
+🏆 FIFA Rating: ${analytics.fifa_rating}
+📅 Attendance: ${analytics.attendance_rating}
+📚 Homework: ${analytics.homework_classwork_rating}
+📝 Exams: ${analytics.exam_rating}
+🧠 Skills: ${analytics.skill_rating}
+⚠️ Risk Level: ${analytics.risk_level}
+💡 Recommendations: ${analytics.recommendations.length}`);
+                } else {
+                    alert('Failed to load analytics for this student.');
+                }
+            } catch (error) {
+                alert('Error loading student analytics: ' + error.message);
+            }
+        }
+
+        // Refresh dashboard
+        async function refreshDashboard() {
+            try {
+                // Show loading states
+                document.querySelectorAll('.loading').forEach(el => {
+                    el.textContent = 'Loading...';
+                });
+
+                // Fetch all data concurrently
+                const [dashboardData, students, batches, settings] = await Promise.all([
+                    fetchDashboardData(),
+                    fetchStudents(),
+                    fetchBatches(),
+                    fetchAnalyticsSettings()
+                ]);
+
+                // Update UI
+                updateOverview(dashboardData);
+                updateRecentStudents(dashboardData.recent_students || students);
+                updateBatchesOverview(batches);
+                updateAnalyticsSettings(settings);
+
+            } catch (error) {
+                console.error('Error refreshing dashboard:', error);
+                alert('Failed to refresh dashboard. Please make sure the API server is running on http://localhost:8001');
+            }
+        }
+
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshDashboard();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(refreshDashboard, 30000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+{
+  "system_stats": {
+    "total_students": 200,
+    "total_batches": 8,
+    "total_classes": 7,
+    "students_paid": 49,
+    "students_pending": 30,
+    "avg_fifa_rating": 63.77372172532757,
+    "high_risk_students": 11
+  },
+  "class_performance": [
+    {
+      "class_name": "Class 10",
+      "student_count": 32,
+      "avg_rating": 65.30474164341805,
+      "critical_students": 0,
+      "high_risk_students": 2,
+      "low_risk_students": 14
+    },
+    {
+      "class_name": "Class 6",
+      "student_count": 34,
+      "avg_rating": 63.3404914883507,
+      "critical_students": 0,
+      "high_risk_students": 1,
+      "low_risk_students": 13
+    },
+    {
+      "class_name": "Class 7",
+      "student_count": 26,
+      "avg_rating": 62.98811146048409,
+      "critical_students": 0,
+      "high_risk_students": 1,
+      "low_risk_students": 9
+    },
+    {
+      "class_name": "Class 8",
+      "student_count": 29,
+      "avg_rating": 65.26023878485634,
+      "critical_students": 0,
+      "high_risk_students": 1,
+      "low_risk_students": 13
+    },
+    {
+      "class_name": "Class 9",
+      "student_count": 30,
+      "avg_rating": 64.76604246131697,
+      "critical_students": 0,
+      "high_risk_students": 2,
+      "low_risk_students": 11
+    },
+    {
+      "class_name": "HSC 1st Year",
+      "student_count": 22,
+      "avg_rating": 67.21756620949905,
+      "critical_students": 0,
+      "high_risk_students": 1,
+      "low_risk_students": 10
+    },
+    {
+      "class_name": "HSC 2nd Year",
+      "student_count": 27,
+      "avg_rating": 73.26810014487536,
+      "critical_students": 0,
+      "high_risk_students": 1,
+      "low_risk_students": 12
+    }
+  ],
+  "recent_updates": [
+    {
+      "student_name": "Anita Banerjee",
+      "class_name": "Class 7",
+      "fifa_rating": 58.198876331834036,
+      "risk_level": "medium",
+      "last_updated": "2025-10-12T00:29:33.146967"
+    },
+    {
+      "student_name": "Amit Hossain",
+      "class_name": "Class 6",
+      "fifa_rating": 83.21370291446505,
+      "risk_level": "low",
+      "last_updated": "2025-10-12T00:29:33.146418"
+    },
+    {
+      "student_name": "Nitin Ali",
+      "class_name": "Class 6",
+      "fifa_rating": 74.34029427378557,
+      "risk_level": "medium",
+      "last_updated": "2025-10-12T00:29:33.145926"
+    },
+    {
+      "student_name": "Sanjay Hossain",
+      "class_name": "HSC 1st Year",
+      "fifa_rating": 68.46635026247063,
+      "risk_level": "low",
+      "last_updated": "2025-10-12T00:29:33.145444"
+    },
+    {
+      "student_name": "Abhishek Sharma",
+      "class_name": "Class 9",
+      "fifa_rating": 90.5679708570468,
+      "risk_level": "low",
+      "last_updated": "2025-10-12T00:29:33.144924"
+    },
+    {
+      "student_name": "Abhishek Sen",
+      "class_name": "Class 9",
+      "fifa_rating": 76.88811622898666,
+      "risk_level": "medium",
+      "last_updated": "2025-10-12T00:29:33.144133"
+    },
+    {
+      "student_name": "Kiran Rahman",
+      "class_name": "Class 9",
+      "fifa_rating": 38.23180060918875,
+      "risk_level": "medium",
+      "last_updated": "2025-10-12T00:29:33.143751"
+    },
+    {
+      "student_name": "Nadia Sen",
+      "class_name": "Class 10",
+      "fifa_rating": 79.18168977552926,
+      "risk_level": "low",
+      "last_updated": "2025-10-12T00:29:33.143372"
+    },
+    {
+      "student_name": "Manju Dutta",
+      "class_name": "Class 6",
+      "fifa_rating": 40.76558763868846,
+      "risk_level": "medium",
+      "last_updated": "2025-10-12T00:29:33.142972"
+    },
+    {
+      "student_name": "Sanjay Sharma",
+      "class_name": "Class 8",
+      "fifa_rating": 40.150041482154045,
+      "risk_level": "low",
+      "last_updated": "2025-10-12T00:29:33.142533"
+    }
+  ]
+}

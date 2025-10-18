@@ -19,8 +19,17 @@ import {
   Save,
   ChevronUp,
   ChevronDown,
-  ArrowUpDown
+  ArrowUpDown,
+  UserCheck,
+  AlertTriangle,
+  Award,
+  TrendingUp,
+  BarChart3,
+  RefreshCcw,
+  CheckCircle
 } from 'lucide-react';
+import BatchAssignmentModal from '../components/batch/BatchAssignmentModal';
+import StudentAnalyticsModal from '../components/modals/StudentAnalyticsModal';
 
 export default function Students() {
   const [students, setStudents] = useState([]);
@@ -33,6 +42,18 @@ export default function Students() {
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   const [statusFilter, setStatusFilter] = useState('all');
+  
+  // Batch assignment state
+  const [showBatchAssignment, setShowBatchAssignment] = useState(false);
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [availableBatches, setAvailableBatches] = useState([]);
+  const [batchAssignmentLoading, setBatchAssignmentLoading] = useState(false);
+  
+  // Analytics state
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [selectedStudentForAnalytics, setSelectedStudentForAnalytics] = useState(null);
+  const [studentAnalytics, setStudentAnalytics] = useState({});
+  const [priorityAlerts, setPriorityAlerts] = useState({ critical: [], high_priority: [], medium_priority: [] });
 
   const loadStudents = async () => {
     try {
@@ -44,12 +65,55 @@ export default function Students() {
       // Handle different response formats
       const studentData = response?.students || response?.data?.students || response?.data || response || [];
       setStudents(Array.isArray(studentData) ? studentData : []);
+      
+      // Load priority alerts for analytics integration
+      await loadPriorityAlerts();
     } catch (error) {
       console.error('Error loading students:', error);
       setError(`Failed to load students: ${error.response?.data?.detail || error.message}`);
       setStudents([]);
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const loadPriorityAlerts = async () => {
+    try {
+      const response = await fetch('/api/students/analytics/priority-alerts');
+      if (response.ok) {
+        const alerts = await response.json();
+        setPriorityAlerts(alerts);
+      }
+    } catch (error) {
+      console.error('Error loading priority alerts:', error);
+    }
+  };
+  
+  const loadAvailableBatches = async (classFilter = null) => {
+    try {
+      const url = classFilter 
+        ? `/api/students/batch-assignment/available-batches?class_name=${encodeURIComponent(classFilter)}`
+        : '/api/students/batch-assignment/available-batches';
+      const response = await fetch(url);
+      if (response.ok) {
+        const batches = await response.json();
+        setAvailableBatches(batches);
+      }
+    } catch (error) {
+      console.error('Error loading available batches:', error);
+    }
+  };
+  
+  const loadStudentAnalytics = async (studentId) => {
+    try {
+      const response = await fetch(`/api/students/analytics/${studentId}`);
+      if (response.ok) {
+        const analytics = await response.json();
+        setStudentAnalytics(prev => ({...prev, [studentId]: analytics}));
+        return analytics;
+      }
+    } catch (error) {
+      console.error('Error loading student analytics:', error);
     }
   };
 
@@ -189,18 +253,163 @@ export default function Students() {
     setShowModal(false);
     setEditingStudent(null);
   };
+  
+  // Batch assignment handlers
+  const handleBatchAssignment = async () => {
+    if (selectedStudents.length === 0) {
+      alert('Please select students to assign to a batch.');
+      return;
+    }
+    
+    await loadAvailableBatches();
+    setShowBatchAssignment(true);
+  };
+  
+  const handleAssignToBatch = async (batchId) => {
+    setBatchAssignmentLoading(true);
+    try {
+      let successCount = 0;
+      let errors = [];
+      
+      for (const studentId of selectedStudents) {
+        try {
+          const response = await fetch(`/api/students/${studentId}/assign-batch/${batchId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (response.ok) {
+            successCount++;
+          } else {
+            const errorData = await response.json();
+            errors.push(`Student ${studentId}: ${errorData.detail}`);
+          }
+        } catch (error) {
+          errors.push(`Student ${studentId}: ${error.message}`);
+        }
+      }
+      
+      if (successCount > 0) {
+        alert(`Successfully assigned ${successCount} students to batch.`);
+        await loadStudents(); // Refresh data
+        setSelectedStudents([]);
+      }
+      
+      if (errors.length > 0) {
+        console.error('Assignment errors:', errors);
+        alert(`Some assignments failed:\n${errors.slice(0, 3).join('\n')}${errors.length > 3 ? '\n...and more' : ''}`);
+      }
+    } catch (error) {
+      console.error('Batch assignment error:', error);
+      alert('Failed to assign students to batch. Please try again.');
+    } finally {
+      setBatchAssignmentLoading(false);
+      setShowBatchAssignment(false);
+    }
+  };
+  
+  const handleSelectStudent = (studentId, checked) => {
+    setSelectedStudents(prev => 
+      checked 
+        ? [...prev, studentId]
+        : prev.filter(id => id !== studentId)
+    );
+  };
+  
+  const handleSelectAll = (checked) => {
+    setSelectedStudents(
+      checked ? filteredAndSortedStudents.map(s => s.id) : []
+    );
+  };
+  
+  // Analytics handlers
+  const handleViewAnalytics = async (student) => {
+    setSelectedStudentForAnalytics(student);
+    await loadStudentAnalytics(student.id);
+    setShowAnalytics(true);
+  };
+  
+  const getStudentPriorityLevel = (studentId) => {
+    if (priorityAlerts.critical?.some(alert => alert.student_id === studentId)) {
+      return 'critical';
+    }
+    if (priorityAlerts.high_priority?.some(alert => alert.student_id === studentId)) {
+      return 'high';
+    }
+    if (priorityAlerts.medium_priority?.some(alert => alert.student_id === studentId)) {
+      return 'medium';
+    }
+    return null;
+  };
+  
+  const getPriorityIcon = (priority) => {
+    switch (priority) {
+      case 'critical':
+        return <AlertTriangle size={16} className="text-red-500" />;
+      case 'high':
+        return <AlertTriangle size={16} className="text-orange-500" />;
+      case 'medium':
+        return <TrendingUp size={16} className="text-yellow-500" />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="space-y-6">
         {/* Action Bar */}
-        <div className="flex justify-end gap-4">
-          <button
-            onClick={handleAddStudent}
-            className="btn-primary inline-flex items-center px-4 py-2"
-          >
-            <Plus size={20} className="mr-2" />
-            Add New Student
-          </button>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          {/* Priority Alerts Summary */}
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={16} className="text-red-500" />
+              <span className="text-red-600 font-medium">{priorityAlerts.critical?.length || 0} Critical</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={16} className="text-orange-500" />
+              <span className="text-orange-600 font-medium">{priorityAlerts.high_priority?.length || 0} High Priority</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <TrendingUp size={16} className="text-yellow-500" />
+              <span className="text-yellow-600 font-medium">{priorityAlerts.medium_priority?.length || 0} Needs Attention</span>
+            </div>
+          </div>
+          
+          <div className="flex gap-3">
+            {/* Batch Assignment Button */}
+            {selectedStudents.length > 0 && (
+              <button
+                onClick={handleBatchAssignment}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+              >
+                <UserCheck size={16} className="mr-2" />
+                Assign to Batch ({selectedStudents.length})
+              </button>
+            )}
+            
+            {/* Refresh Button */}
+            <button
+              onClick={() => {
+                loadStudents();
+                loadPriorityAlerts();
+              }}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            >
+              <RefreshCcw size={16} className="mr-2" />
+              Refresh
+            </button>
+            
+            {/* Add Student Button */}
+            <button
+              onClick={handleAddStudent}
+              className="btn-primary inline-flex items-center px-4 py-2"
+            >
+              <Plus size={20} className="mr-2" />
+              Add New Student
+            </button>
+          </div>
         </div>
 
         {/* Error Display */}
@@ -260,6 +469,14 @@ export default function Students() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <input
+                      type="checkbox"
+                      checked={selectedStudents.length === filteredAndSortedStudents.length && filteredAndSortedStudents.length > 0}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </th>
                   <th 
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                     onClick={() => handleSort('name')}
@@ -345,16 +562,45 @@ export default function Students() {
                     </tr>
                   ))
                 ) : (
-                  filteredAndSortedStudents.map((student) => (
-                    <tr key={student.id} className="hover:bg-gray-50">
+                  filteredAndSortedStudents.map((student) => {
+                    const priorityLevel = getStudentPriorityLevel(student.id);
+                    const isSelected = selectedStudents.includes(student.id);
+                    
+                    return (
+                    <tr key={student.id} className={`hover:bg-gray-50 ${isSelected ? 'bg-blue-50 border-blue-200' : ''}`}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => handleSelectStudent(student.id, e.target.checked)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold mr-3 relative">
                             {student.full_name ? student.full_name.charAt(0) : 'S'}
+                            {priorityLevel && (
+                              <div className="absolute -top-1 -right-1">
+                                {getPriorityIcon(priorityLevel)}
+                              </div>
+                            )}
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {student.full_name || 'N/A'}
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm font-medium text-gray-900">
+                                {student.full_name || 'N/A'}
+                              </div>
+                              {priorityLevel && (
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                  priorityLevel === 'critical' ? 'bg-red-100 text-red-800' :
+                                  priorityLevel === 'high' ? 'bg-orange-100 text-orange-800' :
+                                  'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {priorityLevel === 'critical' ? 'Critical' : 
+                                   priorityLevel === 'high' ? 'High Priority' : 'Needs Attention'}
+                                </span>
+                              )}
                             </div>
                             <div className="text-sm text-gray-500">
                               {student.student_reg_number || 'No ID'} | {student.class_name || 'No Class'}
@@ -387,21 +633,31 @@ export default function Students() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
                           <button
+                            onClick={() => handleViewAnalytics(student)}
+                            className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded"
+                            title="View Analytics"
+                          >
+                            <BarChart3 size={16} />
+                          </button>
+                          <button
                             onClick={() => handleEditStudent(student)}
                             className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
+                            title="Edit Student"
                           >
                             <Edit size={16} />
                           </button>
                           <button
                             onClick={() => handleDeleteStudent(student.id)}
                             className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
+                            title="Delete Student"
                           >
                             <Trash2 size={16} />
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -453,6 +709,26 @@ export default function Students() {
               </div>
             </div>
           </div>
+        )}
+        
+        {/* Batch Assignment Modal */}
+        {showBatchAssignment && (
+          <BatchAssignmentModal
+            students={selectedStudents.map(id => students.find(s => s.id === id)).filter(Boolean)}
+            availableBatches={availableBatches}
+            onAssign={handleAssignToBatch}
+            onClose={() => setShowBatchAssignment(false)}
+            loading={batchAssignmentLoading}
+          />
+        )}
+        
+        {/* Student Analytics Modal */}
+        {showAnalytics && selectedStudentForAnalytics && (
+          <StudentAnalyticsModal
+            student={selectedStudentForAnalytics}
+            analytics={studentAnalytics[selectedStudentForAnalytics.id]}
+            onClose={() => setShowAnalytics(false)}
+          />
         )}
       </div>
   );

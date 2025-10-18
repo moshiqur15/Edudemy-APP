@@ -1,0 +1,777 @@
+{
+  "critical": [],
+  "high_priority": [
+    {
+      "student_id": 151,
+      "name": "Nadia Islam",
+      "class": "Class 7",
+      "fifa_rating": 36.56610339292552,
+      "risk_level": "high",
+      "issues": [
+        "Critical academic performance",
+        "Poor attendance",
+        "Missing homework"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor",
+        "Contact parents about attendance",
+        "Homework tracking required"
+      ]
+    },
+    {
+      "student_id": 185,
+      "name": "Ahmed Islam",
+      "class": "Class 9",
+      "fifa_rating": 37.62538715512932,
+      "risk_level": "high",
+      "issues": [
+        "Critical academic performance",
+        "Poor attendance",
+        "Missing homework"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor",
+        "Contact parents about attendance",
+        "Homework tracking required"
+      ]
+    },
+    {
+      "student_id": 110,
+      "name": "Ayesha Ghosh",
+      "class": "HSC 1st Year",
+      "fifa_rating": 40.6812917982252,
+      "risk_level": "high",
+      "issues": [
+        "Missing homework"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Homework tracking required"
+      ]
+    },
+    {
+      "student_id": 115,
+      "name": "Kavita Ghosh",
+      "class": "Class 10",
+      "fifa_rating": 44.030352860002466,
+      "risk_level": "high",
+      "issues": [
+        "Poor attendance",
+        "Failing exams",
+        "Missing homework"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Contact parents about attendance",
+        "Homework tracking required",
+        "Exam preparation support needed"
+      ]
+    },
+    {
+      "student_id": 98,
+      "name": "Sultana Sharma",
+      "class": "Class 9",
+      "fifa_rating": 45.691525920224706,
+      "risk_level": "high",
+      "issues": [
+        "Poor attendance",
+        "Missing homework"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Contact parents about attendance",
+        "Homework tracking required"
+      ]
+    },
+    {
+      "student_id": 169,
+      "name": "Ruma Islam",
+      "class": "Class 8",
+      "fifa_rating": 47.57788783352204,
+      "risk_level": "high",
+      "issues": [
+        "Failing exams"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Exam preparation support needed"
+      ]
+    },
+    {
+      "student_id": 173,
+      "name": "Mohammad Pal",
+      "class": "Class 6",
+      "fifa_rating": 49.59490311195467,
+      "risk_level": "high",
+      "issues": [
+        "Poor attendance",
+        "Failing exams",
+        "Missing homework"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Contact parents about attendance",
+        "Homework tracking required",
+        "Exam preparation support needed"
+      ]
+    },
+    {
+      "student_id": 24,
+      "name": "Ravi Dutta",
+      "class": "Class 10",
+      "fifa_rating": 56.2107773583608,
+      "risk_level": "high",
+      "issues": [
+        "Poor attendance",
+        "Missing homework"
+      ],
+      "recommended_actions": [
+        "Contact parents about attendance",
+        "Homework tracking required"
+      ]
+    }
+  ],
+  "medium_priority": [
+    {
+      "student_id": 113,
+      "name": "Nasreen Ali",
+      "class": "Class 10",
+      "fifa_rating": 35.02802793166859,
+      "risk_level": "medium",
+      "issues": [
+        "Critical academic performance",
+        "Poor attendance",
+        "Failing exams"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor",
+        "Contact parents about attendance",
+        "Exam preparation support needed"
+      ]
+    },
+    {
+      "student_id": 133,
+      "name": "Asha Islam",
+      "class": "Class 10",
+      "fifa_rating": 35.26243168532789,
+      "risk_level": "medium",
+      "issues": [
+        "Critical academic performance"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor"
+      ]
+    },
+    {
+      "student_id": 80,
+      "name": "Sunita Rahman",
+      "class": "HSC 2nd Year",
+      "fifa_rating": 35.516138753115584,
+      "risk_level": "medium",
+      "issues": [
+        "Critical academic performance",
+        "Poor attendance"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor",
+        "Contact parents about attendance"
+      ]
+    },
+    {
+      "student_id": 77,
+      "name": "Sultana Mukherjee",
+      "class": "Class 9",
+      "fifa_rating": 36.0040319060776,
+      "risk_level": "medium",
+      "issues": [
+        "Critical academic performance"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor"
+      ]
+    },
+    {
+      "student_id": 50,
+      "name": "Ajay Ghosh",
+      "class": "Class 8",
+      "fifa_rating": 36.42023155764029,
+      "risk_level": "medium",
+      "issues": [
+        "Critical academic performance",
+        "Failing exams"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor",
+        "Exam preparation support needed"
+      ]
+    },
+    {
+      "student_id": 79,
+      "name": "Ruma Miah",
+      "class": "Class 7",
+      "fifa_rating": 36.47388154547419,
+      "risk_level": "medium",
+      "issues": [
+        "Critical academic performance",
+        "Missing homework"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor",
+        "Homework tracking required"
+      ]
+    },
+    {
+      "student_id": 195,
+      "name": "Rabeya Ali",
+      "class": "Class 9",
+      "fifa_rating": 36.78826720606411,
+      "risk_level": "low",
+      "issues": [
+        "Critical academic performance"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor"
+      ]
+    },
+    {
+      "student_id": 59,
+      "name": "Nasir Alam",
+      "class": "Class 8",
+      "fifa_rating": 37.29681410287367,
+      "risk_level": "medium",
+      "issues": [
+        "Critical academic performance",
+        "Poor attendance"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor",
+        "Contact parents about attendance"
+      ]
+    },
+    {
+      "student_id": 41,
+      "name": "Nadia Das",
+      "class": "Class 6",
+      "fifa_rating": 37.78145738074587,
+      "risk_level": "medium",
+      "issues": [
+        "Critical academic performance",
+        "Poor attendance",
+        "Failing exams"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor",
+        "Contact parents about attendance",
+        "Exam preparation support needed"
+      ]
+    },
+    {
+      "student_id": 188,
+      "name": "Mohammad Sen",
+      "class": "Class 10",
+      "fifa_rating": 37.82488720252163,
+      "risk_level": "medium",
+      "issues": [
+        "Critical academic performance"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor"
+      ]
+    },
+    {
+      "student_id": 201,
+      "name": "Kiran Rahman",
+      "class": "Class 9",
+      "fifa_rating": 38.23180060918875,
+      "risk_level": "medium",
+      "issues": [
+        "Critical academic performance",
+        "Poor attendance"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor",
+        "Contact parents about attendance"
+      ]
+    },
+    {
+      "student_id": 74,
+      "name": "Nitin Rahman",
+      "class": "Class 8",
+      "fifa_rating": 38.54826310916122,
+      "risk_level": "low",
+      "issues": [
+        "Critical academic performance"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor"
+      ]
+    },
+    {
+      "student_id": 154,
+      "name": "Rashid Hossain",
+      "class": "HSC 1st Year",
+      "fifa_rating": 38.76408936399835,
+      "risk_level": "low",
+      "issues": [
+        "Critical academic performance"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor"
+      ]
+    },
+    {
+      "student_id": 131,
+      "name": "Sanjay Ahmed",
+      "class": "Class 9",
+      "fifa_rating": 39.831075914632606,
+      "risk_level": "medium",
+      "issues": [
+        "Critical academic performance"
+      ],
+      "recommended_actions": [
+        "Immediate academic intervention required",
+        "Schedule parent meeting",
+        "Assign peer mentor"
+      ]
+    },
+    {
+      "student_id": 198,
+      "name": "Sanjay Sharma",
+      "class": "Class 8",
+      "fifa_rating": 40.150041482154045,
+      "risk_level": "low",
+      "issues": [],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials"
+      ]
+    },
+    {
+      "student_id": 175,
+      "name": "Abhishek Dutta",
+      "class": "Class 7",
+      "fifa_rating": 40.188847754470096,
+      "risk_level": "medium",
+      "issues": [],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials"
+      ]
+    },
+    {
+      "student_id": 72,
+      "name": "Manju Uddin",
+      "class": "Class 8",
+      "fifa_rating": 40.44516065476618,
+      "risk_level": "medium",
+      "issues": [],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials"
+      ]
+    },
+    {
+      "student_id": 153,
+      "name": "Karim Ali",
+      "class": "Class 10",
+      "fifa_rating": 40.49033931643761,
+      "risk_level": "medium",
+      "issues": [
+        "Poor attendance"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Contact parents about attendance"
+      ]
+    },
+    {
+      "student_id": 199,
+      "name": "Manju Dutta",
+      "class": "Class 6",
+      "fifa_rating": 40.76558763868846,
+      "risk_level": "medium",
+      "issues": [
+        "Failing exams"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Exam preparation support needed"
+      ]
+    },
+    {
+      "student_id": 118,
+      "name": "Sanjay Islam",
+      "class": "Class 9",
+      "fifa_rating": 40.81294733139299,
+      "risk_level": "medium",
+      "issues": [],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials"
+      ]
+    },
+    {
+      "student_id": 119,
+      "name": "Ravi Roy",
+      "class": "Class 6",
+      "fifa_rating": 40.907864290249634,
+      "risk_level": "medium",
+      "issues": [],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials"
+      ]
+    },
+    {
+      "student_id": 45,
+      "name": "Kiran Khan",
+      "class": "Class 6",
+      "fifa_rating": 41.57362644807957,
+      "risk_level": "low",
+      "issues": [],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials"
+      ]
+    },
+    {
+      "student_id": 85,
+      "name": "Salma Sen",
+      "class": "Class 10",
+      "fifa_rating": 42.23354202392414,
+      "risk_level": "medium",
+      "issues": [
+        "Poor attendance"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Contact parents about attendance"
+      ]
+    },
+    {
+      "student_id": 152,
+      "name": "Deepak Ghosh",
+      "class": "HSC 1st Year",
+      "fifa_rating": 42.582302262413265,
+      "risk_level": "medium",
+      "issues": [
+        "Missing homework"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Homework tracking required"
+      ]
+    },
+    {
+      "student_id": 101,
+      "name": "Shahida Chakraborty",
+      "class": "HSC 1st Year",
+      "fifa_rating": 42.65479825856677,
+      "risk_level": "medium",
+      "issues": [
+        "Poor attendance"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Contact parents about attendance"
+      ]
+    },
+    {
+      "student_id": 51,
+      "name": "Rekha Ahmed",
+      "class": "Class 7",
+      "fifa_rating": 42.682959313280335,
+      "risk_level": "medium",
+      "issues": [
+        "Poor attendance"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Contact parents about attendance"
+      ]
+    },
+    {
+      "student_id": 135,
+      "name": "Rekha Pal",
+      "class": "Class 9",
+      "fifa_rating": 44.39760259583038,
+      "risk_level": "medium",
+      "issues": [
+        "Missing homework"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Homework tracking required"
+      ]
+    },
+    {
+      "student_id": 142,
+      "name": "Seema Sen",
+      "class": "Class 10",
+      "fifa_rating": 45.15404946610649,
+      "risk_level": "medium",
+      "issues": [
+        "Poor attendance"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Contact parents about attendance"
+      ]
+    },
+    {
+      "student_id": 78,
+      "name": "Ravi Sen",
+      "class": "Class 8",
+      "fifa_rating": 45.26555347738864,
+      "risk_level": "medium",
+      "issues": [
+        "Poor attendance"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Contact parents about attendance"
+      ]
+    },
+    {
+      "student_id": 60,
+      "name": "Hassan Alam",
+      "class": "HSC 2nd Year",
+      "fifa_rating": 45.392571976140154,
+      "risk_level": "medium",
+      "issues": [],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials"
+      ]
+    },
+    {
+      "student_id": 57,
+      "name": "Fatima Chakraborty",
+      "class": "Class 7",
+      "fifa_rating": 45.697810438829876,
+      "risk_level": "medium",
+      "issues": [
+        "Failing exams"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Exam preparation support needed"
+      ]
+    },
+    {
+      "student_id": 106,
+      "name": "Nadia Sheikh",
+      "class": "Class 6",
+      "fifa_rating": 45.70309257220579,
+      "risk_level": "medium",
+      "issues": [
+        "Poor attendance"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Contact parents about attendance"
+      ]
+    },
+    {
+      "student_id": 180,
+      "name": "Kavita Ahmed",
+      "class": "Class 6",
+      "fifa_rating": 45.83261697338951,
+      "risk_level": "medium",
+      "issues": [
+        "Failing exams"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Exam preparation support needed"
+      ]
+    },
+    {
+      "student_id": 114,
+      "name": "Ibrahim Uddin",
+      "class": "Class 7",
+      "fifa_rating": 45.84085049120559,
+      "risk_level": "medium",
+      "issues": [],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials"
+      ]
+    },
+    {
+      "student_id": 33,
+      "name": "Sandeep Rahman",
+      "class": "Class 6",
+      "fifa_rating": 46.01428993854944,
+      "risk_level": "low",
+      "issues": [],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials"
+      ]
+    },
+    {
+      "student_id": 65,
+      "name": "Arjun Alam",
+      "class": "HSC 2nd Year",
+      "fifa_rating": 46.489144339307025,
+      "risk_level": "medium",
+      "issues": [
+        "Failing exams"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Exam preparation support needed"
+      ]
+    },
+    {
+      "student_id": 189,
+      "name": "Ravi Roy",
+      "class": "Class 10",
+      "fifa_rating": 46.55762544618671,
+      "risk_level": "medium",
+      "issues": [
+        "Missing homework"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Homework tracking required"
+      ]
+    },
+    {
+      "student_id": 163,
+      "name": "Manju Khan",
+      "class": "HSC 1st Year",
+      "fifa_rating": 46.65303694161377,
+      "risk_level": "low",
+      "issues": [],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials"
+      ]
+    },
+    {
+      "student_id": 25,
+      "name": "Rekha Alam",
+      "class": "Class 8",
+      "fifa_rating": 46.83136514162763,
+      "risk_level": "medium",
+      "issues": [
+        "Failing exams"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Exam preparation support needed"
+      ]
+    },
+    {
+      "student_id": 17,
+      "name": "Rashid Ali",
+      "class": "Class 6",
+      "fifa_rating": 46.986160076050915,
+      "risk_level": "medium",
+      "issues": [],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials"
+      ]
+    },
+    {
+      "student_id": 164,
+      "name": "Salma Miah",
+      "class": "Class 9",
+      "fifa_rating": 49.57731501457974,
+      "risk_level": "medium",
+      "issues": [
+        "Failing exams"
+      ],
+      "recommended_actions": [
+        "Additional tutoring recommended",
+        "Monitor weekly progress",
+        "Provide extra practice materials",
+        "Exam preparation support needed"
+      ]
+    }
+  ]
+}

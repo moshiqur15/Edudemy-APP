@@ -7,6 +7,7 @@ import AttendanceRecord from '../components/AttendanceRecord';
 import AttendanceRecordCalendar from '../components/AttendanceRecordCalendar';
 import GradeBookEnhanced from '../components/GradeBookEnhanced';
 import BehaviorRecordsSystem from '../components/BehaviorRecordsSystem';
+import BatchAnalysisView from '../components/BatchAnalysisView';
 import {
   Calendar,
   Users,
@@ -26,7 +27,12 @@ import {
   BarChart3,
   FileText,
   Download,
-  Printer
+  Printer,
+  AlertTriangle,
+  TrendingUp,
+  Award,
+  RefreshCcw,
+  Activity
 } from 'lucide-react';
 
 // Sub-tabs for the Classes and Students section
@@ -58,6 +64,13 @@ const SUB_TABS = [
     icon: Target,
     color: 'text-orange-600',
     description: 'Track student behavior and conduct'
+  },
+  {
+    id: 'analytics',
+    label: 'FIFA Analytics',
+    icon: BarChart3,
+    color: 'text-purple-600',
+    description: 'View FIFA-style student performance analytics'
   }
 ];
 
@@ -69,6 +82,7 @@ export default function ClassesAndStudents({ activeTab = null }) {
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [selectedFeature, setSelectedFeature] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [navigationStarted, setNavigationStarted] = useState(false);
   
   // Handle direct routing to specific tabs
   useEffect(() => {
@@ -91,8 +105,8 @@ export default function ClassesAndStudents({ activeTab = null }) {
         if (!selectedBatch) {
           setSelectedBatch({ id: 1, name: 'Class 1 - Batch A', class_name: 'Class 1', studentCount: 25 });
         }
-        if (students.length === 0) {
-          setStudents([
+        if (selectedStudents.length === 0) {
+          setSelectedStudents([
             { id: 1, full_name: 'John Doe', student_id: 'STU001', class_name: 'Class 1' },
             { id: 2, full_name: 'Jane Smith', student_id: 'STU002', class_name: 'Class 1' },
             { id: 3, full_name: 'Mike Johnson', student_id: 'STU003', class_name: 'Class 1' }
@@ -106,10 +120,67 @@ export default function ClassesAndStudents({ activeTab = null }) {
   const [classes, setClasses] = useState([]);
   const [batches, setBatches] = useState([]);
   const [students, setStudents] = useState([]);
+  
+  // Analytics states
+  const [classAnalytics, setClassAnalytics] = useState({});
+  const [batchAnalytics, setBatchAnalytics] = useState({});
+  const [priorityAlerts, setPriorityAlerts] = useState({ critical: [], high_priority: [], medium_priority: [] });
+  const [dashboardData, setDashboardData] = useState(null);
 
   useEffect(() => {
     loadClasses();
+    loadAnalyticsData();
   }, []);
+  
+  const loadAnalyticsData = async () => {
+    try {
+      // Load priority alerts
+      const alertsResponse = await fetch('/api/students/analytics/priority-alerts');
+      if (alertsResponse.ok) {
+        const alerts = await alertsResponse.json();
+        setPriorityAlerts(alerts);
+      }
+      
+      // Load dashboard data
+      const dashboardResponse = await fetch('/api/students/analytics/dashboard-summary');
+      if (dashboardResponse.ok) {
+        const dashboard = await dashboardResponse.json();
+        setDashboardData(dashboard);
+      }
+    } catch (error) {
+      console.error('Error loading analytics data:', error);
+    }
+  };
+  
+  const getClassAnalytics = (className) => {
+    if (!dashboardData?.class_performance) return null;
+    return dashboardData.class_performance.find(cp => cp.class_name === className);
+  };
+  
+  const getBatchPriorityStudents = (batchStudents) => {
+    const allPriorityStudents = [
+      ...priorityAlerts.critical || [],
+      ...priorityAlerts.high_priority || [],
+      ...priorityAlerts.medium_priority || []
+    ];
+    
+    return batchStudents.filter(student => 
+      allPriorityStudents.some(alert => alert.student_id === student.id)
+    );
+  };
+  
+  const getStudentPriorityLevel = (studentId) => {
+    if (priorityAlerts.critical?.some(alert => alert.student_id === studentId)) {
+      return 'critical';
+    }
+    if (priorityAlerts.high_priority?.some(alert => alert.student_id === studentId)) {
+      return 'high';
+    }
+    if (priorityAlerts.medium_priority?.some(alert => alert.student_id === studentId)) {
+      return 'medium';
+    }
+    return null;
+  };
 
   const loadClasses = async () => {
     try {
@@ -137,8 +208,8 @@ export default function ClassesAndStudents({ activeTab = null }) {
         }))
         .sort((a, b) => {
           // Sort by class number if numeric, otherwise alphabetically
-          const aNum = parseInt(a.name.replace(/\D/g, ''));
-          const bNum = parseInt(b.name.replace(/\D/g, ''));
+          const aNum = parseInt(a.name.replace(/[^0-9]/g, ''));
+          const bNum = parseInt(b.name.replace(/[^0-9]/g, ''));
           if (aNum && bNum) return aNum - bNum;
           return a.name.localeCompare(b.name);
         });
@@ -262,8 +333,19 @@ export default function ClassesAndStudents({ activeTab = null }) {
       setSelectedBatch(null);
       setStudents([]);
     } else if (currentStep === 'feature') {
-      setCurrentStep('students');
+      if (selectedFeature) {
+        setSelectedFeature(null);
+      } else {
+        setCurrentStep('students');
+      }
+    } else if (currentStep === 'classes') {
+      // Go back to initial view
+      setNavigationStarted(false);
+      setSelectedClass(null);
+      setSelectedBatch(null);
       setSelectedFeature(null);
+      setStudents([]);
+      setBatches([]);
     }
   };
 
@@ -320,22 +402,37 @@ export default function ClassesAndStudents({ activeTab = null }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {classes.map((classItem) => (
+          {classes.map((classItem) => {
+            const analytics = getClassAnalytics(classItem.name);
+            const hasHighRisk = analytics && (analytics.critical_students > 0 || analytics.high_risk_students > 0);
+            
+            return (
             <div
               key={classItem.id}
               onClick={() => handleClassSelect(classItem)}
-              className="bg-white rounded-lg border-2 border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all duration-200 cursor-pointer p-6"
+              className={`bg-white rounded-lg border-2 hover:shadow-lg transition-all duration-200 cursor-pointer p-6 relative ${
+                hasHighRisk ? 'border-orange-300 hover:border-orange-400' : 'border-gray-200 hover:border-blue-400'
+              }`}
             >
+              {hasHighRisk && (
+                <div className="absolute -top-2 -right-2 bg-orange-500 text-white rounded-full p-1">
+                  <AlertTriangle size={16} />
+                </div>
+              )}
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl font-bold text-blue-600">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                  hasHighRisk ? 'bg-orange-100' : 'bg-blue-100'
+                }`}>
+                  <span className={`text-2xl font-bold ${
+                    hasHighRisk ? 'text-orange-600' : 'text-blue-600'
+                  }`}>
                     {classItem.serial}
                   </span>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   {classItem.name}
                 </h3>
-                <div className="space-y-1 text-sm text-gray-600">
+                <div className="space-y-1 text-sm text-gray-600 mb-3">
                   <div className="flex items-center justify-center">
                     <BookOpen size={16} className="mr-1" />
                     {classItem.totalBatches} Batches
@@ -345,9 +442,35 @@ export default function ClassesAndStudents({ activeTab = null }) {
                     {classItem.totalStudents} Students
                   </div>
                 </div>
+                
+                {analytics && (
+                  <div className="border-t pt-3 space-y-2">
+                    <div className="flex items-center justify-center text-xs">
+                      <Award size={12} className="mr-1 text-yellow-500" />
+                      <span className="text-gray-600">Avg FIFA: {analytics.avg_rating?.toFixed(1) || '0.0'}</span>
+                    </div>
+                    {(analytics.critical_students > 0 || analytics.high_risk_students > 0) && (
+                      <div className="flex items-center justify-center gap-2 text-xs">
+                        {analytics.critical_students > 0 && (
+                          <span className="flex items-center text-red-600">
+                            <AlertTriangle size={10} className="mr-1" />
+                            {analytics.critical_students} Critical
+                          </span>
+                        )}
+                        {analytics.high_risk_students > 0 && (
+                          <span className="flex items-center text-orange-600">
+                            <TrendingUp size={10} className="mr-1" />
+                            {analytics.high_risk_students} High Risk
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -378,26 +501,61 @@ export default function ClassesAndStudents({ activeTab = null }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {batches.map((batch) => (
+          {batches.map((batch) => {
+            // Calculate priority students for this batch
+            const priorityCount = {
+              critical: priorityAlerts.critical?.filter(alert => 
+                students.some(s => s.id === alert.student_id && s.batch_id === batch.id)
+              ).length || 0,
+              high: priorityAlerts.high_priority?.filter(alert => 
+                students.some(s => s.id === alert.student_id && s.batch_id === batch.id)
+              ).length || 0,
+              medium: priorityAlerts.medium_priority?.filter(alert => 
+                students.some(s => s.id === alert.student_id && s.batch_id === batch.id)
+              ).length || 0
+            };
+            
+            const hasPriorityStudents = priorityCount.critical > 0 || priorityCount.high > 0;
+            
+            return (
             <div
               key={batch.id}
               onClick={() => handleBatchSelect(batch)}
-              className="bg-white rounded-lg border-2 border-gray-200 hover:border-green-400 hover:shadow-lg transition-all duration-200 cursor-pointer p-6"
+              className={`bg-white rounded-lg border-2 hover:shadow-lg transition-all duration-200 cursor-pointer p-6 relative ${
+                hasPriorityStudents ? 'border-orange-300 hover:border-orange-400' : 'border-gray-200 hover:border-green-400'
+              }`}
             >
+              {hasPriorityStudents && (
+                <div className="absolute -top-2 -right-2 bg-orange-500 text-white rounded-full p-1">
+                  <AlertTriangle size={14} />
+                </div>
+              )}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">
                     {batch.name}
                   </h3>
-                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    hasPriorityStudents ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
+                  }`}>
                     {batch.status || 'Active'}
                   </span>
                 </div>
                 
                 <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center">
-                    <Users size={16} className="mr-2" />
-                    {batch.studentCount} Students
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Users size={16} className="mr-2" />
+                      {batch.studentCount} Students
+                    </div>
+                    {hasPriorityStudents && (
+                      <div className="flex items-center gap-1">
+                        <Activity size={12} className="text-orange-500" />
+                        <span className="text-xs text-orange-600">
+                          {priorityCount.critical + priorityCount.high} Need Attention
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center">
                     <Clock size={16} className="mr-2" />
@@ -409,6 +567,32 @@ export default function ClassesAndStudents({ activeTab = null }) {
                   </div>
                 </div>
 
+                {/* Priority Students Summary */}
+                {(priorityCount.critical > 0 || priorityCount.high > 0 || priorityCount.medium > 0) && (
+                  <div className="pt-2 border-t">
+                    <div className="flex items-center gap-3 text-xs">
+                      {priorityCount.critical > 0 && (
+                        <span className="flex items-center text-red-600">
+                          <AlertTriangle size={10} className="mr-1" />
+                          {priorityCount.critical} Critical
+                        </span>
+                      )}
+                      {priorityCount.high > 0 && (
+                        <span className="flex items-center text-orange-600">
+                          <TrendingUp size={10} className="mr-1" />
+                          {priorityCount.high} High Risk
+                        </span>
+                      )}
+                      {priorityCount.medium > 0 && (
+                        <span className="flex items-center text-yellow-600">
+                          <Target size={10} className="mr-1" />
+                          {priorityCount.medium} Medium
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
                 {batch.schedule_days && (
                   <div className="pt-2 border-t">
                     <p className="text-xs text-gray-500">
@@ -420,7 +604,8 @@ export default function ClassesAndStudents({ activeTab = null }) {
                 )}
               </div>
             </div>
-          ))}
+            );
+          })
         </div>
       )}
     </div>
@@ -453,31 +638,102 @@ export default function ClassesAndStudents({ activeTab = null }) {
         </div>
       ) : (
         <div className="space-y-6">
+          {/* Priority Students Alert */}
+          {getBatchPriorityStudents(students).length > 0 && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle size={20} className="text-orange-600" />
+                <h4 className="font-medium text-orange-800">
+                  Priority Students Alert
+                </h4>
+              </div>
+              <p className="text-sm text-orange-700">
+                {getBatchPriorityStudents(students).length} students in this batch need immediate attention.
+                They will be highlighted below.
+              </p>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {students.slice(0, 12).map((student) => (
-              <div key={student.id} className="bg-white rounded-lg border border-gray-200 p-4">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <User size={20} className="text-gray-500" />
+            {students.slice(0, 20).map((student) => {
+              const priorityLevel = getStudentPriorityLevel(student.id);
+              
+              return (
+              <div 
+                key={student.id} 
+                className={`bg-white rounded-lg border p-4 relative ${
+                  priorityLevel ? 'border-orange-300 shadow-md' : 'border-gray-200'
+                }`}
+              >
+                {priorityLevel && (
+                  <div className={`absolute -top-2 -right-2 rounded-full p-1 text-white ${
+                    priorityLevel === 'critical' ? 'bg-red-500' :
+                    priorityLevel === 'high' ? 'bg-orange-500' : 'bg-yellow-500'
+                  }`}>
+                    {priorityLevel === 'critical' ? 
+                      <AlertTriangle size={12} /> : 
+                      <TrendingUp size={12} />
+                    }
                   </div>
-                  <h4 className="font-medium text-gray-900 text-sm">
+                )}
+                <div className="text-center">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 ${
+                    priorityLevel === 'critical' ? 'bg-red-100' :
+                    priorityLevel === 'high' ? 'bg-orange-100' :
+                    priorityLevel === 'medium' ? 'bg-yellow-100' : 'bg-gray-200'
+                  }`}>
+                    <span className={`text-sm font-semibold ${
+                      priorityLevel === 'critical' ? 'text-red-600' :
+                      priorityLevel === 'high' ? 'text-orange-600' :
+                      priorityLevel === 'medium' ? 'text-yellow-600' : 'text-gray-500'
+                    }`}>
+                      {student.full_name?.charAt(0) || 'S'}
+                    </span>
+                  </div>
+                  <h4 className="font-medium text-gray-900 text-sm mb-1">
                     {student.full_name}
                   </h4>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 mb-2">
                     Roll: {student.student_roll_number || student.admission_serial || 'N/A'}
                   </p>
+                  {priorityLevel && (
+                    <div className={`text-xs px-2 py-1 rounded-full ${
+                      priorityLevel === 'critical' ? 'bg-red-100 text-red-700' :
+                      priorityLevel === 'high' ? 'bg-orange-100 text-orange-700' :
+                      'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {priorityLevel === 'critical' ? 'Critical' :
+                       priorityLevel === 'high' ? 'High Priority' : 'Needs Attention'}
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
 
-          {students.length > 12 && (
+          {students.length > 20 && (
             <div className="text-center text-sm text-gray-500">
-              Showing 12 of {students.length} students
+              Showing 20 of {students.length} students
             </div>
           )}
 
-          <div className="flex justify-center">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+            {/* Priority Action Button */}
+            {getBatchPriorityStudents(students).length > 0 && (
+              <button
+                onClick={() => {
+                  // This could open a priority students modal or navigate to analytics
+                  alert(`${getBatchPriorityStudents(students).length} students need attention. This will be handled in the Analytics tab.`);
+                }}
+                className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
+              >
+                <AlertTriangle size={16} />
+                View Priority Students ({getBatchPriorityStudents(students).length})
+              </button>
+            )}
+            
+            {/* Continue Button */}
             <button
               onClick={handleStudentsConfirm}
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium"
@@ -582,6 +838,15 @@ export default function ClassesAndStudents({ activeTab = null }) {
         />
       );
     }
+    
+    if (selectedFeature.id === 'analytics') {
+      return (
+        <BatchAnalysisView
+          batch={selectedBatch}
+          onBack={activeTab ? () => window.history.back() : goBack}
+        />
+      );
+    }
 
     // Placeholder for other features
     return (
@@ -624,27 +889,154 @@ export default function ClassesAndStudents({ activeTab = null }) {
     );
   }
 
+  // Show initial view or feature flow based on direct access
+  const showInitialView = !activeTab && !navigationStarted;
+  const showFeatureFlow = activeTab || navigationStarted;
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Classes and Students</h1>
-        <p className="text-gray-600 mt-2">
-          Manage classes, batches, and student activities
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Classes and Students</h1>
+          <p className="text-gray-600 mt-2">
+            {showInitialView ? 'Browse classes and access student management features' : 'Manage classes, batches, and student activities'}
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          {/* Priority Alerts Summary */}
+          {(priorityAlerts.critical?.length > 0 || priorityAlerts.high_priority?.length > 0 || priorityAlerts.medium_priority?.length > 0) && (
+            <div className="flex items-center gap-3 text-sm bg-orange-50 px-4 py-2 rounded-lg border border-orange-200">
+              <AlertTriangle size={16} className="text-orange-600" />
+              <div className="flex items-center gap-3">
+                {priorityAlerts.critical?.length > 0 && (
+                  <span className="flex items-center text-red-600 font-medium">
+                    {priorityAlerts.critical.length} Critical
+                  </span>
+                )}
+                {priorityAlerts.high_priority?.length > 0 && (
+                  <span className="flex items-center text-orange-600 font-medium">
+                    {priorityAlerts.high_priority.length} High Priority
+                  </span>
+                )}
+                {priorityAlerts.medium_priority?.length > 0 && (
+                  <span className="flex items-center text-yellow-600 font-medium">
+                    {priorityAlerts.medium_priority.length} Needs Attention
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* Refresh Button */}
+          <button
+            onClick={() => {
+              loadClasses();
+              loadAnalyticsData();
+            }}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+          >
+            <RefreshCcw size={16} />
+            Refresh
+          </button>
+        </div>
       </div>
 
-      {/* Breadcrumb */}
-      {renderBreadcrumb()}
+      {/* Navigation Controls */}
+      {showFeatureFlow && (
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            {renderBreadcrumb()}
+          </div>
+          <button
+            onClick={() => {
+              setNavigationStarted(false);
+              setCurrentStep('classes');
+              setSelectedClass(null);
+              setSelectedBatch(null);
+              setSelectedFeature(null);
+              setStudents([]);
+              setBatches([]);
+            }}
+            className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm"
+          >
+            ← Back to Home
+          </button>
+        </div>
+      )}
+      
+      {/* Quick Access Section - show when not in feature flow */}
+      {showInitialView && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          {SUB_TABS.map((feature) => (
+            <div
+              key={feature.id}
+              onClick={() => {
+                setNavigationStarted(true);
+                setCurrentStep('feature');
+                setSelectedFeature(feature);
+                // Set default selections for quick access
+                if (!selectedClass) {
+                  setSelectedClass({ id: 1, name: 'All Classes', serial: 'all' });
+                }
+                if (!selectedBatch) {
+                  setSelectedBatch({ id: 1, name: 'All Batches', class_name: 'All Classes', studentCount: 0 });
+                }
+              }}
+              className="bg-white rounded-lg border-2 border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all duration-200 cursor-pointer p-6 group"
+            >
+              <div className="text-center space-y-4">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform`}
+                     style={{backgroundColor: feature.color.replace('text-', 'bg-').replace('600', '100')}}>
+                  <feature.icon size={32} className={feature.color} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    {feature.label}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {feature.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Main Content */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        {currentStep === 'classes' && renderClassSelection()}
-        {currentStep === 'batches' && renderBatchSelection()}
-        {currentStep === 'students' && renderStudentsList()}
-        {currentStep === 'feature' && selectedFeature === null && renderFeatureSelection()}
-        {currentStep === 'feature' && selectedFeature !== null && renderSelectedFeature()}
-      </div>
+      {/* Step-by-Step Navigation Section */}
+      {showInitialView && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Or Browse by Class Structure</h2>
+            <p className="text-gray-600">Follow the step-by-step process to navigate through classes, batches, and students</p>
+          </div>
+          <div className="flex justify-center">
+            <button
+              onClick={() => {
+                setNavigationStarted(true);
+                setCurrentStep('classes');
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2"
+            >
+              <Users size={20} />
+              Start with Class Selection
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content - show when in feature flow */}
+      {showFeatureFlow && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          {currentStep === 'classes' && renderClassSelection()}
+          {currentStep === 'batches' && renderBatchSelection()}
+          {currentStep === 'students' && renderStudentsList()}
+          {currentStep === 'feature' && selectedFeature === null && renderFeatureSelection()}
+          {currentStep === 'feature' && selectedFeature !== null && renderSelectedFeature()}
+        </div>
+      )}
     </div>
   );
 }

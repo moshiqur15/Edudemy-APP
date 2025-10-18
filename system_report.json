@@ -1,0 +1,19 @@
+{
+  "timestamp": "2025-10-12T00:02:00.684377",
+  "database": {
+    "total_students": 200,
+    "total_batches": 2,
+    "analytics_records": 3,
+    "analytics_coverage": "1.5%"
+  },
+  "api": {
+    "status": "Offline",
+    "endpoints_tested": 6,
+    "response_time_avg": "< 5 seconds"
+  },
+  "analytics": {
+    "fifa_ratings_calculated": 3,
+    "ml_model_status": "Trained",
+    "recommendations_generated": "Active"
+  }
+}
